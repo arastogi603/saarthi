@@ -30,6 +30,8 @@ interface ChatContextProps {
   setRoomMessages: (roomId: string, messages: Message[]) => void;
   refreshRooms: () => void;
   rooms: any[];
+  // Stable send helper — always reads from ref, never stale React state
+  sendMessage: (roomId: string, payload: object) => boolean;
 }
 
 const ChatContext = createContext<ChatContextProps | undefined>(undefined);
@@ -239,6 +241,20 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
+  // Use ref directly — avoids stale closure / state lag that blocks sending
+  const sendMessage = (roomId: string, payload: object): boolean => {
+    const client = stompClientRef.current;
+    if (!client || !client.active) {
+      console.warn("sendMessage: STOMP client not active yet", { roomId, clientExists: !!client, active: client?.active });
+      return false;
+    }
+    client.publish({
+      destination: "/app/chat.send",
+      body: JSON.stringify(payload),
+    });
+    return true;
+  };
+
   const value = {
     stompClient,
     isConnected,
@@ -252,6 +268,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setRoomMessages,
     refreshRooms,
     rooms,
+    sendMessage,
   };
 
   return (

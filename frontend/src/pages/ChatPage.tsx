@@ -26,7 +26,7 @@ interface Room {
 export const ChatPage: React.FC = () => {
   const { roomId } = useParams<{ roomId?: string }>();
   const navigate = useNavigate();
-  const { stompClient, isConnected, messages: contextMessages, setRoomMessages, addMessage, setActiveRoomId, unreadCounts, rooms: contextRooms } = useChatContext();
+  const { sendMessage, isConnected, messages: contextMessages, setRoomMessages, addMessage, setActiveRoomId, unreadCounts, rooms: contextRooms } = useChatContext();
   const [inputValue, setInputValue] = useState("");
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
 
@@ -44,12 +44,6 @@ export const ChatPage: React.FC = () => {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll on new messages
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
 
   // 1. Synchronize Active Room with roomId from URL and shared rooms state
   useEffect(() => {
@@ -103,7 +97,7 @@ export const ChatPage: React.FC = () => {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim() || !stompClient || !isConnected || !activeRoom) return;
+    if (!inputValue.trim() || !activeRoom) return;
 
     const payload = {
       roomId: Number(activeRoom.id),
@@ -113,12 +107,13 @@ export const ChatPage: React.FC = () => {
       messageType: "CHAT"
     };
 
-    stompClient.publish({
-      destination: "/app/chat.send",
-      body: JSON.stringify(payload)
-    });
+    const sent = sendMessage(activeRoom.id, payload);
+    if (!sent) {
+      console.warn("Message not sent — STOMP link not ready yet");
+      return;
+    }
 
-    // Optimistic update
+    // Optimistic update (only after confirmed publish)
     const newMessage: Message = {
       id: Date.now().toString(),
       senderId: "me",
@@ -131,7 +126,7 @@ export const ChatPage: React.FC = () => {
     setInputValue("");
   };
 
-  // Auto-scroll on new messages
+  // Auto-scroll on new messages (single, deduplicated)
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -318,7 +313,7 @@ export const ChatPage: React.FC = () => {
               />
               <button
                 type="submit"
-                disabled={!isConnected || !inputValue.trim()}
+                disabled={!inputValue.trim()}
                 className="absolute right-2 p-3 bg-cyan-500 hover:bg-cyan-400 text-black rounded-xl transition-all active:scale-90 shadow-[0_0_20px_rgba(34,211,238,0.3)] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Send size={18} />
