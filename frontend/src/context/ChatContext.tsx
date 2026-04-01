@@ -55,7 +55,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const subscriptionsMapRef = useRef<Record<string, any>>({});
   const [toasts, setToasts] = useState<{ id: string; title: string; message: string; roomId: string }[]>([]);
 
-  const currentUserId = Number(localStorage.getItem("userId"));
+  // Read userId dynamically so we always get the latest value from localStorage
+  const getCurrentUserId = () => Number(localStorage.getItem("userId"));
   const totalUnreadCount = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
 
   const setActiveRoomId = (id: string | null) => {
@@ -106,7 +107,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     console.log(`📡 Neural Uplink to Room: ${room.name} (${roomId})`);
     const sub = client.subscribe(`/topic/room/${roomId}`, (msg: IMessage) => {
       const body = JSON.parse(msg.body);
-      if (Number(body.senderId) !== Number(currentUserId)) {
+      if (Number(body.senderId) !== Number(getCurrentUserId())) {
         const incoming: Message = {
           id: body.sentAt || Date.now().toString(),
           senderId: body.senderId.toString(),
@@ -141,7 +142,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const refreshRooms = async () => {
-     if (!currentUserId || isConnectingRef.current) return;
+     const userId = getCurrentUserId();
+     if (!userId || isConnectingRef.current) return;
 
      // If already active, just hot-sync new rooms
      if (stompClientRef.current?.active) {
@@ -203,8 +205,31 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
+    // Attempt initial connection (may be a no-op if not logged in yet)
     refreshRooms();
+
+    // Listen for when login writes userId to localStorage (cross-tab or same-tab)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "userId" && e.newValue && !stompClientRef.current?.active) {
+        console.log("🔑 UserId detected in storage — initiating Neural Link...");
+        refreshRooms();
+      }
+    };
+
+    // Custom event dispatched by AuthPage immediately after login
+    const handleUserLogin = () => {
+      if (!stompClientRef.current?.active) {
+        console.log("🔑 User login event — initiating Neural Link...");
+        refreshRooms();
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("user-logged-in", handleUserLogin);
+
     return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("user-logged-in", handleUserLogin);
       if (stompClientRef.current) {
         stompClientRef.current.deactivate();
         stompClientRef.current = null;
@@ -212,7 +237,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isConnectingRef.current = false;
       }
     };
-  }, [currentUserId]);
+  }, []);
 
   const value = {
     stompClient,

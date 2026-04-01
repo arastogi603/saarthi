@@ -38,6 +38,9 @@ export const AuthPage: React.FC = () => {
       localStorage.setItem("userId", response.data.userId);
       localStorage.setItem("userName", response.data.name);
 
+      // Signal ChatContext to establish WebSocket connection immediately
+      window.dispatchEvent(new CustomEvent("user-logged-in"));
+
       navigate("/connect");
     } catch (error: any) {
       setIsLoading(false);
