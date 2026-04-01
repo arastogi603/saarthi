@@ -16,8 +16,6 @@ WORKDIR /app
 # Copy the JAR from the build stage
 COPY --from=build /app/target/SkillSync-0.0.1-SNAPSHOT.jar app.jar
 
-# Render usually listens on 8080 by default for Spring Boot
-EXPOSE 8080
-
-# Start the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Render assigns a dynamic port via the $PORT environment variable.
+# We pass this directly to Spring Boot via a System Property.
+ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -jar app.jar"]
