@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SkillSync WebSocket Tester</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; max-width: 860px; margin: 30px auto; padding: 20px; background: #1a1a2e; color: #eee; }
+        h1 { color: #00d4ff; margin-bottom: 5px; }
+        h2 { color: #00d4ff; font-size: 15px; margin: 0 0 10px; }
+        input, select { width: 100%; padding: 8px; margin: 4px 0 10px; background: #16213e; color: #fff; border: 1px solid #00d4ff; border-radius: 4px; }
+        button { padding: 9px 18px; background: #00d4ff; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin: 4px 4px 4px 0; }
+        button:hover { background: #00b8d9; }
+        button:disabled { background: #444; color: #888; cursor: not-allowed; }
+        button.danger { background: #ff4444; color: #fff; }
+        #log { background: #0f3460; padding: 15px; border-radius: 8px; height: 280px; overflow-y: auto; font-family: monospace; font-size: 13px; }
+        .ok   { color: #00ff88; }
+        .err  { color: #ff4444; }
+        .info { color: #00d4ff; }
+        .msg  { color: #ffcc00; }
+        .section { background: #16213e; padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #0f3460; }
+        .row { display: flex; gap: 10px; }
+        .row > div { flex: 1; }
+        .badge { display:inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; background:#333; }
+        .badge.connected { background:#00aa55; }
+        .badge.disconnected { background:#aa2222; }
+        small { color: #aaa; display:block; margin-top: -8px; margin-bottom: 8px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>🔌 SkillSync WebSocket Tester</h1>
+    <p style="color:#aaa; margin-top:0;">Tests real-time chat using STOMP over SockJS</p>
+
+    <!-- STEP 1: Create Room -->
+    <div class="section">
+        <h2>📦 Step 1: Create a Chat Room (REST)</h2>
+        <small>You need a numeric room ID from the database. Create one here first, or use an existing ID.</small>
+        <div class="row">
+            <div>
+                <label>Room Name</label>
+                <input id="roomName" value="Alice-Bob Chat">
+            </div>
+            <div>
+                <label>Member IDs (comma separated)</label>
+                <input id="memberIds" value="1,2" placeholder="1,2">
+            </div>
+        </div>
+        <div class="row">
+            <div>
+                <label>JWT Token (Alice or Bob)</label>
+                <input id="restToken" placeholder="eyJhbGci...">
+            </div>
+        </div>
+        <button onclick="createRoom()">🏠 Create Room</button>
+        <span id="roomResult" style="margin-left:10px; color:#ffcc00;"></span>
+    </div>
+
+    <!-- STEP 2: Connect -->
+    <div class="section">
+        <h2>🔗 Step 2: Connect to WebSocket</h2>
+        <div class="row">
+            <div>
+                <label>JWT Token (this user's token)</label>
+                <input id="wsToken" placeholder="eyJhbGci...">
+            </div>
+            <div>
+                <label>Room ID (numeric, from Step 1)</label>
+                <input id="roomId" type="number" value="1">
+            </div>
+        </div>
+        <button id="connectBtn" onclick="connect()">🔗 Connect</button>
+        <button id="disconnectBtn" class="danger" onclick="disconnect()" disabled>❌ Disconnect</button>
+        <span id="statusBadge" class="badge disconnected" style="margin-left:10px;">disconnected</span>
+    </div>
+
+    <!-- STEP 3: Send -->
+    <div class="section">
+        <h2>💬 Step 3: Send a Message</h2>
+        <div class="row">
+            <div>
+                <label>Sender ID</label>
+                <input id="senderId" type="number" value="1">
+            </div>
+            <div>
+                <label>Message</label>
+                <input id="msgContent" placeholder="Hello, want to collaborate?" onkeypress="if(event.key==='Enter')sendMsg()">
+            </div>
+        </div>
+        <button id="sendBtn" onclick="sendMsg()" disabled>📤 Send</button>
+        <small>In the second tab, use Bob's sender ID (2) and his token above</small>
+    </div>
+
+    <!-- Log -->
+    <div class="section">
+        <h2>📋 Activity Log</h2>
+        <div id="log"></div>
+        <button onclick="document.getElementById('log').innerHTML=''" style="margin-top:8px; background:#333; color:#aaa; font-size:12px; padding:5px 10px;">Clear</button>
+    </div>
+
+    <script>
+        let stompClient = null;
+
+        function log(msg, type='info') {
+            const d = document.getElementById('log');
+            const t = new Date().toLocaleTimeString();
+            d.innerHTML += `<div class="${type}">[${t}] ${msg}</div>`;
+            d.scrollTop = d.scrollHeight;
+        }
+
+        // ─── Step 1: Create Room ──────────────────────────────────────────
+        async function createRoom() {
+            const token     = document.getElementById('restToken').value.trim();
+            const name      = document.getElementById('roomName').value.trim();
+            const rawIds    = document.getElementById('memberIds').value.trim();
+            const memberIds = rawIds.split(',').map(s => parseInt(s.trim()));
+
+            if (!token) { alert('Enter a JWT token to create a room'); return; }
+
+            try {
+                const res = await fetch('http://localhost:8080/api/chat/rooms', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ name, memberIds })
+                });
+                const data = await res.json();
+                if (data.id) {
+                    document.getElementById('roomId').value = data.id;
+                    document.getElementById('roomResult').textContent = `✅ Room created! ID = ${data.id}`;
+                    log(`Room created: ID=${data.id}, Name="${data.name}"`, 'ok');
+                } else {
+                    document.getElementById('roomResult').textContent = '❌ ' + (data.message || JSON.stringify(data));
+                    log('Room creation failed: ' + JSON.stringify(data), 'err');
+                }
+            } catch(e) {
+                log('REST error: ' + e.message, 'err');
+            }
+        }
+
+        // ─── Step 2: Connect ──────────────────────────────────────────────
+        function connect() {
+            const token  = document.getElementById('wsToken').value.trim();
+            const roomId = document.getElementById('roomId').value.trim();
+
+            if (!token)  { log('❌ Enter your JWT token!', 'err'); return; }
+            if (!roomId) { log('❌ Enter the Room ID!', 'err'); return; }
+
+            log(`Connecting to ws://localhost:8080/ws, subscribing to /topic/room/${roomId} ...`, 'info');
+
+            const socket = new SockJS('http://localhost:8080/ws');
+            stompClient  = Stomp.over(socket);
+            stompClient.debug = null; // silence debug
+
+            stompClient.connect({'Authorization': 'Bearer ' + token}, function(frame) {
+                log('✅ STOMP connected: ' + frame.headers['user-name'], 'ok');
+                setConnected(true);
+
+                // ⭐ Subscribe to the correct topic
+                stompClient.subscribe(`/topic/room/${roomId}`, function(message) {
+                    const body = JSON.parse(message.body);
+                    log(`📨 [${body.senderName || 'User '+body.senderId}]: ${body.content}`, 'msg');
+                });
+                log(`👂 Listening on /topic/room/${roomId}`, 'ok');
+
+            }, function(error) {
+                log('❌ Connection failed: ' + error, 'err');
+                setConnected(false);
+            });
+        }
+
+        function disconnect() {
+            if (stompClient) stompClient.disconnect(() => log('🔌 Disconnected.', 'info'));
+            setConnected(false);
+        }
+
+        // ─── Step 3: Send Message ─────────────────────────────────────────
+        function sendMsg() {
+            const roomId   = parseInt(document.getElementById('roomId').value);
+            const senderId = parseInt(document.getElementById('senderId').value);
+            const content  = document.getElementById('msgContent').value.trim();
+
+            if (!content) { log('❌ Message is empty', 'err'); return; }
+            if (!stompClient || !stompClient.connected) { log('❌ Not connected!', 'err'); return; }
+
+            // ⭐ Match exactly what ChatMessageDto expects
+            const payload = {
+                roomId:      roomId,
+                senderId:    senderId,
+                content:     content,
+                messageType: 'CHAT'
+            };
+
+            // ⭐ Send to the correct destination: /app/chat.send
+            stompClient.send('/app/chat.send', {}, JSON.stringify(payload));
+            log(`📤 Sent to /app/chat.send: "${content}"`, 'info');
+            document.getElementById('msgContent').value = '';
+        }
+
+        function setConnected(yes) {
+            document.getElementById('connectBtn').disabled    = yes;
+            document.getElementById('disconnectBtn').disabled = !yes;
+            document.getElementById('sendBtn').disabled       = !yes;
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = yes ? 'connected' : 'disconnected';
+            badge.className   = 'badge ' + (yes ? 'connected' : 'disconnected');
+        }
+    </script>
+</body>
+</html>

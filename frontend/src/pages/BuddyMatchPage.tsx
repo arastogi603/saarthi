@@ -1,0 +1,234 @@
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import api from "../services/api";
+import {
+  BookOpen,
+  Target,
+  Sparkles,
+  Layers,
+  Search,
+  Check,
+} from "lucide-react";
+
+import { useNavigate } from "react-router";
+
+type AppState = "idle"; // Simplify state to only idle form
+
+
+
+export const SaarthiBuddyEngine: React.FC = () => {
+  const [step] = useState<AppState>("idle");
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [level, setLevel] = useState<string>("Mid");
+  const [objective, setObjective] = useState<string>("STUDY_BUDDY");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
+  const navigate = useNavigate();
+
+  const skills = [
+    "React",
+    "TypeScript",
+    "Node.js",
+    "AI/ML",
+    "Next.js",
+    "Tailwind",
+  ];
+
+  // Objective Options
+  const objectives = [
+    { id: "STUDY_BUDDY", label: "Study Buddy", desc: "Learn together" },
+    { id: "PROJECT_PARTNER", label: "Project Making", desc: "Build a product" },
+    { id: "HACKATHON", label: "Hackathon Team", desc: "Compete & Win" },
+  ];
+
+  const saveProfile = async () => {
+    const formattedSkills = selectedSkills.map((skill) => ({
+      skillName: skill,
+      level: level,
+    }));
+
+    const profileUpdate = {
+      name: localStorage.getItem("userName") || "Developer",
+      bio: `Looking for a ${objective}`,
+      goal: objective,
+      skills: formattedSkills,
+    };
+
+    await api.put("/api/users/me", profileUpdate);
+  };
+
+  const handleSaveOnly = async () => {
+    if (selectedSkills.length === 0) {
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+      return;
+    }
+    try {
+      await saveProfile();
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } catch (err) {
+      console.error("Neural Config Failure:", err);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    }
+  };
+
+  const handleStartMatching = async () => {
+    if (selectedSkills.length === 0) return;
+    try {
+      await saveProfile();
+      navigate("/matches", { state: { activeObjective: objective } });
+    } catch (error) {
+      console.error("Neural sync error:", error);
+    }
+  };
+
+  const toggleSkill = (skill: string) => {
+    setSelectedSkills((prev) =>
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
+    );
+  };
+
+  /* Redundant localized matching UI removed for global router shift */
+
+  return (
+    <div className="min-h-screen bg-[#0B0F1A] text-slate-200 flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[120px] rounded-full" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/10 blur-[120px] rounded-full" />
+
+      <AnimatePresence mode="wait">
+        {step === "idle" && (
+          <motion.div
+            key="idle"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
+            className="w-full max-w-xl bg-slate-900/40 backdrop-blur-3xl border border-white/10 p-8 md:p-12 rounded-[3rem] shadow-2xl z-10"
+          >
+            <div className="space-y-2 mb-10 text-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest">
+                <Sparkles size={12} /> AI Matchmaker
+              </div>
+              <h1 className="text-4xl font-black text-white tracking-tighter italic uppercase">
+                Find Your <span className="text-blue-500">Niche.</span>
+              </h1>
+            </div>
+
+            <div className="space-y-8">
+              {/* 01. Specialization */}
+              <div className="space-y-4">
+                <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                  <BookOpen size={14} className="text-blue-500" /> 01.
+                  Specialization
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {skills.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => toggleSkill(s)}
+                      className={`px-4 py-2 rounded-2xl text-xs font-bold border transition-all ${
+                        selectedSkills.includes(s)
+                          ? "bg-blue-600 border-blue-400 text-white"
+                          : "bg-slate-800/50 border-slate-700 text-slate-400"
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 02. Proficiency */}
+              <div className="space-y-4">
+                <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                  <Target size={14} className="text-blue-500" /> 02. Proficiency
+                  Level
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {["Beginner", "Mid", "Pro"].map((lv) => (
+                    <button
+                      key={lv}
+                      onClick={() => setLevel(lv)}
+                      className={`py-3 rounded-2xl border font-black text-[10px] uppercase transition-all ${
+                        level === lv
+                          ? "bg-white text-black"
+                          : "bg-slate-800/30 text-slate-500"
+                      }`}
+                    >
+                      {lv}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 03. NEW LAYER: MISSION OBJECTIVE */}
+              <div className="space-y-4">
+                <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                  <Layers size={14} className="text-blue-500" /> 03. Mission
+                  Purpose
+                </label>
+                <div className="grid grid-cols-1 gap-2">
+                  {objectives.map((obj) => (
+                    <button
+                      key={obj.id}
+                      onClick={() => setObjective(obj.id)}
+                      className={`px-6 py-3 rounded-2xl border flex items-center justify-between transition-all group ${
+                        objective === obj.id
+                          ? "bg-blue-600/20 border-blue-500 text-white"
+                          : "bg-slate-800/30 border-slate-700 text-slate-500"
+                      }`}
+                    >
+                      <div className="text-left">
+                        <p
+                          className={`text-[10px] font-black uppercase ${objective === obj.id ? "text-blue-400" : "text-slate-400"}`}
+                        >
+                          {obj.label}
+                        </p>
+                        <p className="text-[9px] opacity-60 font-bold">
+                          {obj.desc}
+                        </p>
+                      </div>
+                      <div
+                        className={`w-2 h-2 rounded-full transition-all ${objective === obj.id ? "bg-blue-500 scale-125" : "bg-slate-700"}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-4 mt-10">
+              <button
+                onClick={handleSaveOnly}
+                className={`w-1/3 py-5 border rounded-[2rem] font-black text-[10px] uppercase flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95 ${
+                  saveStatus === "saved" 
+                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-500" 
+                    : saveStatus === "error"
+                    ? "bg-red-500/20 border-red-500 text-red-500"
+                    : "bg-slate-800/50 hover:bg-slate-700/50 border-slate-700 text-white"
+                }`}
+              >
+                {saveStatus === "saved" ? (
+                  <>
+                    SAVED <Check size={14} />
+                  </>
+                ) : saveStatus === "error" ? (
+                  "ERROR"
+                ) : (
+                  "SAVE DETAILS"
+                )}
+              </button>
+              <button
+                onClick={handleStartMatching}
+                className="w-2/3 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-[2rem] font-black text-sm flex items-center justify-center gap-3 shadow-xl transition-all active:scale-95"
+              >
+                <Search size={18} /> INITIATE MATCHING
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+      </AnimatePresence>
+    </div>
+  );
+};
