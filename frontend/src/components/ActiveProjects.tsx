@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import api from "../services/api";
 import { Code2, ArrowUpRight, Loader2, Zap } from "lucide-react";
-import { motion } from "framer-motion";
 
 export const ActiveProjects = () => {
   const [projects, setProjects] = useState<any[]>([]);

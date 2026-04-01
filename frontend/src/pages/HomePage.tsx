@@ -1,4 +1,3 @@
-import { Sidebar } from "../components/sidebar";
 import { DashboardMain } from "../components/dashboard";
 
 const HomePage = () => {

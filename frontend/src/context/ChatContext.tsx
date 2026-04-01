@@ -186,7 +186,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             isConnectingRef.current = false;
             subscriptionsMapRef.current = {};
           },
-          onStompError: (frame: IFrame) => {
+          onStompError: (_frame: IFrame) => {
             setIsConnected(false);
             isConnectingRef.current = false;
           }

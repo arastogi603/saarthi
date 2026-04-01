@@ -349,8 +349,8 @@ export const MainPage: React.FC = () => {
 
       {/* --- FOOTER --- */}
       <footer className="max-w-7xl mx-auto px-6 py-12 border-t border-white/5 flex justify-between items-center opacity-50">
-        <span className="text-[10px] font-black uppercase tracking-[0.8em]">
-          SkillSync 2026
+        <span className="text-[10px] font-black uppercase tracking-[1.2em] transform translate-x-[0.6em]">
+          SAARTHI 2026
         </span>
         <div className="flex gap-4">
           <MessageSquare size={18} />

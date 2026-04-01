@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import api from "../services/api";
-import { UserPlus, Star, Zap, Loader2 } from "lucide-react";
+import { UserPlus, Star, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const SuggestedBuddies = () => {
