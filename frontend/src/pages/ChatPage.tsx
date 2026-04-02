@@ -14,7 +14,9 @@ import {
   Terminal,
   Zap,
   ShieldCheck,
+  Video,
 } from "lucide-react";
+import { MeetingRoom } from "../components/MeetingRoom";
 
 interface Room {
   id: string;
@@ -29,6 +31,33 @@ export const ChatPage: React.FC = () => {
   const { sendMessage, isConnected, messages: contextMessages, setRoomMessages, addMessage, setActiveRoomId, unreadCounts, rooms: contextRooms } = useChatContext();
   const [inputValue, setInputValue] = useState("");
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
+  const [isVideoActive, setIsVideoActive] = useState(false);
+
+  const handleStartMeet = () => {
+    if (!activeRoom) return;
+    setIsVideoActive(true);
+    
+    const payload = {
+      roomId: Number(activeRoom.id),
+      senderId: currentUserId,
+      senderName: currentUserName,
+      content: "[MEET_INVITE]",
+      messageType: "CHAT"
+    };
+
+    const sent = sendMessage(activeRoom.id, payload);
+    if (!sent) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      senderId: "me",
+      senderName: currentUserName,
+      content: "[MEET_INVITE]",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: "CHAT"
+    };
+    addMessage(activeRoom.id, newMessage);
+  };
 
   const rooms: Room[] = useMemo(() => contextRooms.map((r: any) => ({
     id: r.id.toString(),
@@ -168,6 +197,9 @@ export const ChatPage: React.FC = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-6">
+          <button onClick={handleStartMeet} className="px-5 py-2.5 bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 border border-blue-500/30 rounded-xl flex items-center gap-2 font-black tracking-widest text-[10px] uppercase transition-all shadow-[0_0_15px_rgba(37,99,235,0.2)]">
+            <Video size={16} /> Init Video Uplink
+          </button>
           <div className="flex -space-x-3">
             {[1, 2, 3].map((i) => (
               <div
@@ -187,9 +219,9 @@ export const ChatPage: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 flex overflow-hidden z-10">
+      <main className="flex-1 flex overflow-hidden z-10 w-full relative">
         {/* --- LEFT SIDEBAR (Rooms/Channels) --- */}
-        <aside className="w-72 border-r border-white/5 bg-black/20 hidden lg:flex flex-col p-6 gap-8">
+        <aside className={`w-72 border-r border-white/5 bg-black/20 ${isVideoActive ? "hidden" : "hidden lg:flex"} flex-col p-6 gap-8 shrink-0`}>
           <div>
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-6">
               Neural Clusters
@@ -245,8 +277,15 @@ export const ChatPage: React.FC = () => {
           </div>
         </aside>
 
+        {/* --- VIDEO AREA --- */}
+        {isVideoActive && (
+          <section className="flex-1 relative bg-[#030508] border-r border-white/5 h-full z-20">
+            <MeetingRoom roomName={activeRoom?.id || "lobby"} userName={currentUserName} onClose={() => setIsVideoActive(false)} />
+          </section>
+        )}
+
         {/* --- CHAT AREA --- */}
-        <section className="flex-1 flex flex-col bg-white/[0.01]">
+        <section className={`flex flex-col bg-white/[0.01] transition-all h-full z-10 ${isVideoActive ? "w-full lg:w-[400px] shrink-0 border-l border-white/10 shadow-[-20px_0_50px_rgba(34,211,238,0.05)]" : "flex-1"}`}>
           {/* Messages Wrapper */}
           <div
             ref={scrollRef}
@@ -287,7 +326,17 @@ export const ChatPage: React.FC = () => {
                           : "bg-slate-900/80 border border-white/5 text-slate-200 rounded-tl-none"
                       }`}
                     >
-                      {msg.content}
+                      {msg.content === "[MEET_INVITE]" ? (
+                        <div className="flex flex-col gap-3 items-center text-center p-2 min-w-[200px]">
+                           <Video size={24} className="text-cyan-400 animate-pulse" />
+                           <span className="text-[10px] uppercase font-black tracking-widest leading-relaxed">Neural Video Link<br />Established</span>
+                           <button onClick={() => setIsVideoActive(true)} className="mt-1 w-full py-2.5 px-6 bg-cyan-500 hover:bg-cyan-400 text-black rounded-xl font-black text-xs uppercase transition-all active:scale-95 shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+                             Join Session
+                           </button>
+                        </div>
+                      ) : (
+                        msg.content
+                      )}
                     </div>
                   </div>
                 </motion.div>
