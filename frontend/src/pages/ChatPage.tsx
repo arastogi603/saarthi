@@ -38,8 +38,7 @@ export const ChatPage: React.FC = () => {
     rooms: contextRooms, 
     setActiveRoomId, 
     sendMessage,
-    unreadCounts,
-    stompClient
+    unreadCounts
   } = useChatContext();
   const [inputValue, setInputValue] = useState("");
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
