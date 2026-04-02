@@ -135,11 +135,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const syncSubscriptions = async (client: Client) => {
      try {
         const res = await api.get("/api/chat/rooms");
-        const roomsData = res.data;
+        const roomsData = (res.data || []).sort((a: any, b: any) => Number(b.id) - Number(a.id));
         setRooms(roomsData);
         roomsData.forEach((r: any) => subscribeToRoom(client, r));
+        return roomsData; // Return for navigation purposes
      } catch (err) {
         console.error("Hot-Sync Failure:", err);
+        return [];
      }
   };
 
@@ -178,8 +180,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               
               if (signal.type === "HANDSHAKE_COMPLETE") {
                  console.log("Handshake Complete Signal: Immediate Refresh Triggered.");
-                 // Use hot-sync instead of full refresh loop
-                 syncSubscriptions(client);
+                 // 1. Refresh rooms and subscriptions
+                 syncSubscriptions(client).then(() => {
+                    // 2. Auto-navigate to the new room if available
+                    if (signal.roomId) {
+                       navigate(`/chat/${signal.roomId}`);
+                    }
+                 });
                  showToast("Neural Link Established", `You are now synced with ${signal.peerName}`, "/sessions");
                  window.dispatchEvent(new CustomEvent("neural-sync", { detail: signal }));
               }

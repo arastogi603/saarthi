@@ -15,6 +15,7 @@ import {
   Zap,
   ShieldCheck,
   Video,
+  Cpu,
 } from "lucide-react";
 import { MeetingRoom } from "../components/MeetingRoom";
 
@@ -32,6 +33,7 @@ export const ChatPage: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
   const [isVideoActive, setIsVideoActive] = useState(false);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
 
   const handleStartMeet = () => {
     if (!activeRoom) return;
@@ -100,9 +102,10 @@ export const ChatPage: React.FC = () => {
     // Fetch history
     const fetchHistory = async () => {
       try {
+        setIsHistoryLoading(true);
         const res = await api.get(`/api/chat/rooms/${activeRoom.id}/messages`);
         const mappedMsgs: Message[] = res.data.map((m: any) => ({
-          id: m.sentAt,
+          id: `${m.sentAt}-${m.senderId}`,
           senderId: m.senderId === currentUserId ? "me" : m.senderId.toString(),
           senderName: m.senderName,
           content: m.content,
@@ -112,6 +115,8 @@ export const ChatPage: React.FC = () => {
         setRoomMessages(activeRoom.id, mappedMsgs);
       } catch (err) {
         console.error("Failed to fetch history:", err);
+      } finally {
+        setIsHistoryLoading(false);
       }
     };
 
@@ -293,17 +298,26 @@ export const ChatPage: React.FC = () => {
             ref={scrollRef}
             className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide"
           >
-            {messages.length === 0 && (
+            {isHistoryLoading ? (
+              <div className="h-full flex flex-col items-center justify-center opacity-20">
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}>
+                  <Cpu size={64} className="mb-4 text-cyan-400" />
+                </motion.div>
+                <p className="font-black italic uppercase tracking-widest text-cyan-400">
+                  Synchronizing Neural Link...
+                </p>
+              </div>
+            ) : messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center opacity-20 grayscale">
                 <Terminal size={64} className="mb-4" />
                 <p className="font-black italic uppercase tracking-widest">
                   Awaiting Data Input...
                 </p>
               </div>
-            )}
+            ) : null}
 
             <AnimatePresence initial={false}>
-              {messages.map((msg: Message) => (
+              {!isHistoryLoading && messages.map((msg: Message) => (
                 <motion.div
                   key={msg.id}
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
