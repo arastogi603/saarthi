@@ -38,7 +38,7 @@ export const Sidebar: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.clear();
-    navigate("/login");
+    window.location.href = "/login";
   };
 
   const isExpanded = !isCollapsed || isHovered;
