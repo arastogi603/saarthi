@@ -12,7 +12,7 @@ function spaFallback(): Plugin {
       server.middlewares.use((req, _res, next) => {
         const url = req.url ?? "";
         // If the request is for a file (has extension) or is an API call, skip
-        if (url.includes(".") || url.startsWith("/api") || url.startsWith("/ws")) {
+        if (url.includes(".") || url.startsWith("/api") || url.startsWith("/ws") || url.startsWith("/@")) {
           return next();
         }
         // Rewrite all other routes to index.html so React Router handles them

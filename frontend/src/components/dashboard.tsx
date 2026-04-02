@@ -4,7 +4,7 @@ import { GreetingCard } from "./GreetingCard";
 import { DetailedProgress } from "./Detailedprogess";
 import { ActiveProjects } from "./ActiveProjects";
 import { SuggestedBuddies } from "./SuggestedBuddies";
-import { SudokuGame } from "./SudokuGame";
+import { GameCarousel } from "./GameCarousel";
 import api from "../services/api";
 import { motion } from "framer-motion";
 
@@ -106,9 +106,9 @@ export const DashboardMain: React.FC = () => {
           {/* MAIN COLUMN (8/12) - THE CORE FLOW */}
           <div className="lg:col-span-8 space-y-10">
             
-            {/* HERO: Expanded Sudoku Game */}
+            {/* HERO: Game Carousel */}
             <div className="w-full">
-               <SudokuGame />
+               <GameCarousel />
             </div>
 
             {/* SECONDARY: Capability Matrix */}
