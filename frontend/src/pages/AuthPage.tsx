@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router";
 import {
   Mail,
   Lock,
@@ -11,7 +10,6 @@ import {
 import api from "../services/api";
 
 export const AuthPage: React.FC = () => {
-  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -38,10 +36,8 @@ export const AuthPage: React.FC = () => {
       localStorage.setItem("userId", response.data.userId);
       localStorage.setItem("userName", response.data.name);
 
-      // Signal ChatContext to establish WebSocket connection immediately
-      window.dispatchEvent(new CustomEvent("user-logged-in"));
-
-      navigate("/connect");
+      // Force full reload to reset all Contexts and established Links
+      window.location.href = "/connect";
     } catch (error: any) {
       setIsLoading(false);
       console.error("❌ BACKEND ERROR:", error.response?.data);
