@@ -50,6 +50,8 @@ public class SecurityConfig {
                 .requestMatchers("/ws/**").permitAll()
                 // Public read-only project browsing
                 .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/search", "/api/projects/{id}").permitAll()
+                // Health check path for UptimeRobot (keep-alive)
+                .requestMatchers("/api/health").permitAll()
                 // Everything else requires a valid JWT
                 .anyRequest().authenticated()
             )
