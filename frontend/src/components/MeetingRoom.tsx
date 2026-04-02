@@ -17,7 +17,7 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ roomName, userName, on
       className="w-full h-full relative bg-[#030508] border-r border-white/10 flex flex-col shadow-[0_0_50px_rgba(34,211,238,0.1)] rounded-tl-[2rem] overflow-hidden"
     >
       <JitsiMeeting
-        domain="meet.ffmuc.net"
+        domain="meet.jit.si"
         roomName={`SkillSync-Neural-${roomName}`}
         configOverwrite={{
           startWithAudioMuted: false,
