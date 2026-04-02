@@ -76,19 +76,20 @@ export const ChatPage: React.FC = () => {
 
   // 1. Synchronize Active Room with roomId from URL and shared rooms state
   useEffect(() => {
-    if (rooms.length > 0) {
-      if (roomId) {
-        const target = rooms.find((r: any) => r.id === roomId);
-        if (target && activeRoom?.id !== target.id) {
-          setActiveRoom(target);
-        } else if (!target && activeRoom?.id !== rooms[0].id) {
-          setActiveRoom(rooms[0]);
-        }
-      } else if (!activeRoom && rooms.length > 0) {
-        setActiveRoom(rooms[0]);
-      }
+    if (rooms.length === 0) return;
+
+    if (!roomId) {
+      navigate(`/chat/${rooms[0].id}`, { replace: true });
+      return;
     }
-  }, [roomId, rooms, activeRoom?.id]);
+
+    const target = rooms.find((r: any) => r.id === roomId);
+    if (target) {
+      setActiveRoom(target);
+    } else {
+      navigate(`/chat/${rooms[0].id}`, { replace: true });
+    }
+  }, [roomId, rooms.length, navigate]);
 
   // 2. Initial Message Fetch and set active room ID for global context
   useEffect(() => {
@@ -230,7 +231,7 @@ export const ChatPage: React.FC = () => {
               {rooms.map((room: Room) => (
                 <div
                   key={room.id}
-                  onClick={() => setActiveRoom(room)}
+                  onClick={() => navigate(`/chat/${room.id}`)}
                   className={`group flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all ${activeRoom?.id === room.id ? "bg-cyan-500/10 border border-cyan-500/20 text-white" : "hover:bg-white/5 text-slate-400"}`}
                 >
                   <span className="font-bold italic uppercase tracking-tighter text-sm">
@@ -285,7 +286,8 @@ export const ChatPage: React.FC = () => {
         )}
 
         {/* --- CHAT AREA --- */}
-        <section className={`flex flex-col bg-white/[0.01] transition-all h-full z-10 ${isVideoActive ? "w-full lg:w-[400px] shrink-0 border-l border-white/10 shadow-[-20px_0_50px_rgba(34,211,238,0.05)]" : "flex-1"}`}>
+        {!isVideoActive && (
+        <section className={`flex flex-col bg-white/[0.01] transition-all h-full z-10 flex-1`}>
           {/* Messages Wrapper */}
           <div
             ref={scrollRef}
@@ -378,6 +380,7 @@ export const ChatPage: React.FC = () => {
             </div>
           </div>
         </section>
+        )}
       </main>
 
       <style>{`
