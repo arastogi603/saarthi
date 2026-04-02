@@ -38,7 +38,8 @@ export const ChatPage: React.FC = () => {
     rooms: contextRooms, 
     setActiveRoomId, 
     sendMessage,
-    unreadCounts
+    unreadCounts,
+    refreshRooms
   } = useChatContext();
   const [inputValue, setInputValue] = useState("");
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
@@ -88,20 +89,22 @@ export const ChatPage: React.FC = () => {
 
   // 1. Synchronize Active Room with roomId from URL and shared rooms state
   useEffect(() => {
-    if (rooms.length === 0) return;
-
-    if (!roomId) {
-      navigate(`/chat/${rooms[0].id}`, { replace: true });
-      return;
-    }
-
+    // If we have a roomId, check if it exists in our current local list
     const target = rooms.find((r: any) => r.id === roomId);
+
     if (target) {
+      // Room found, establish active link
       setActiveRoom(target);
-    } else {
+    } else if (roomId) {
+      // Room NOT found but we have a roomId in the URL!
+      // This happens for BRAND NEW Uplinks — trigger a hot-sync immediately.
+      console.log("Hot-Sync: New Neural Cluster detected via URL. Synchronizing...");
+      refreshRooms();
+    } else if (rooms.length > 0) {
+      // No roomId specified, default to the first available cluster
       navigate(`/chat/${rooms[0].id}`, { replace: true });
     }
-  }, [roomId, rooms.length, navigate]);
+  }, [roomId, rooms, navigate, refreshRooms]);
 
   // 2. Initial Message Fetch and set active room ID for global context
   useEffect(() => {
