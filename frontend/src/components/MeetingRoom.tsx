@@ -25,7 +25,7 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ roomName, userName, on
           disableModeratorIndicator: true,
           startScreenSharing: false,
           enableEmailInStats: false,
-          prejoinPageEnabled: false, 
+          prejoinPageEnabled: true, 
         }}
         interfaceConfigOverwrite={{
           DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
