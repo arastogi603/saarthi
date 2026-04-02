@@ -29,7 +29,18 @@ interface Room {
 export const ChatPage: React.FC = () => {
   const { roomId } = useParams<{ roomId?: string }>();
   const navigate = useNavigate();
-  const { sendMessage, isConnected, messages: contextMessages, setRoomMessages, addMessage, setActiveRoomId, unreadCounts, rooms: contextRooms } = useChatContext();
+  const { 
+    messages: contextMessages, 
+    addMessage, 
+    setRoomMessages, 
+    clearChatState, 
+    isConnected, 
+    rooms: contextRooms, 
+    setActiveRoomId, 
+    sendMessage,
+    unreadCounts,
+    stompClient
+  } = useChatContext();
   const [inputValue, setInputValue] = useState("");
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
   const [isVideoActive, setIsVideoActive] = useState(false);
@@ -168,8 +179,15 @@ export const ChatPage: React.FC = () => {
     }
   }, [messages]);
 
+  // Wipe state on disconnect
+  useEffect(() => {
+    if (!isConnected) {
+      clearChatState();
+    }
+  }, [isConnected]);
+
   return (
-    <div className="h-screen bg-[#030508] text-slate-200 font-sans overflow-hidden flex flex-col relative">
+    <div key={activeRoom?.id || "empty"} className="h-screen bg-[#030508] text-slate-200 font-sans overflow-hidden flex flex-col relative">
       {/* --- BACKGROUND GLOW BEDS --- */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-600/10 blur-[180px] rounded-full" />

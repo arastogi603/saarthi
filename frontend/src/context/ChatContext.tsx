@@ -32,6 +32,7 @@ interface ChatContextProps {
   rooms: any[];
   // Stable send helper — always reads from ref, never stale React state
   sendMessage: (roomId: string, payload: object) => boolean;
+  clearChatState: () => void;
 }
 
 const ChatContext = createContext<ChatContextProps | undefined>(undefined);
@@ -88,7 +89,11 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       [roomId]: newMessages
     }));
   };
-
+  const clearChatState = () => {
+    setMessages({});
+    setUnreadCounts({});
+    setRooms([]);
+  };
   const showToast = (title: string, message: string, roomId: string) => {
     const id = Date.now().toString();
     setToasts((prev) => [...prev, { id, title, message, roomId }]);
@@ -244,6 +249,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         stompClientRef.current = null;
         subscriptionsMapRef.current = {};
         isConnectingRef.current = false;
+        clearChatState();
       }
     };
   }, []);
@@ -276,6 +282,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshRooms,
     rooms,
     sendMessage,
+    clearChatState,
   };
 
   return (
