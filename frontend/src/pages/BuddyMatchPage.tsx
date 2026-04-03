@@ -52,10 +52,9 @@ export const SaarthiBuddyEngine: React.FC = () => {
   const saveProfile = async () => {
     const profileUpdate = {
       name: localStorage.getItem("userName") || "Developer",
-      bio: `Looking for a ${objective}${objective === "STUDY_BUDDY" ? ` (${studyMode})` : ""}`,
+      bio: localStorage.getItem("userBio") || `Syncing for ${objective}`,
       goal: objective,
       studyMode: objective === "STUDY_BUDDY" ? studyMode : null,
-      // Removed skills update - users manage skills via profile tab
     };
 
     await api.put("/api/users/me", profileUpdate);
@@ -74,7 +73,7 @@ export const SaarthiBuddyEngine: React.FC = () => {
   };
 
   const handleSaveOnly = async () => {
-    if (selectedSkills.length === 0) {
+    if (selectedSkills.length === 0 && objective === "STUDY_BUDDY") {
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 2000);
       return;
@@ -91,10 +90,16 @@ export const SaarthiBuddyEngine: React.FC = () => {
   };
 
   const handleStartMatching = async () => {
-    if (selectedSkills.length === 0) return;
+    if (selectedSkills.length === 0 && objective === "STUDY_BUDDY") return;
     try {
       await saveProfile();
-      navigate("/matches", { state: { activeObjective: objective } });
+      // Pass selectedSkills as 'topics' only for this matching session
+      navigate("/matches", { 
+        state: { 
+          activeObjective: objective,
+          topics: objective === "STUDY_BUDDY" ? selectedSkills : requiredTeamSkills
+        } 
+      });
     } catch (error) {
       console.error("Neural sync error:", error);
     }

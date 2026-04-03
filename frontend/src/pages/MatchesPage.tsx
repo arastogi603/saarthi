@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import api from "../services/api";
 import {
   Zap,
@@ -52,9 +52,15 @@ const DOMAINS = [
 
 const MatchesPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // SESSION DATA FOR TOPIC HIGHLIGHTING
+  const sessionTopics = (location.state as any)?.topics || [];
+  const initialDomain = (location.state as any)?.activeObjective || "ALL";
+
   const [allMatches, setAllMatches] = useState<MatchResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDomain, setSelectedDomain] = useState("ALL");
+  const [selectedDomain, setSelectedDomain] = useState(initialDomain);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
   const currentUserId = Number(localStorage.getItem("userId"));
@@ -81,12 +87,10 @@ const MatchesPage: React.FC = () => {
     let list = [...allMatches];
     
     if (selectedDomain === "RANDOM") {
-      // Shuffle the entire pool for the Random mode
       return list.sort(() => Math.random() - 0.5);
     }
     
     if (selectedDomain !== "ALL") {
-      // Stringent domain filtering
       list = list.filter(m => m.matchedUser.goal === selectedDomain);
     }
     
@@ -98,14 +102,12 @@ const MatchesPage: React.FC = () => {
     setCurrentIndex(0);
   }, [selectedDomain]);
 
-  useEffect(() => {
-    const handleSync = () => {
-      console.log("Neural Handshake Sync Triggered - Refreshing Cluster...");
-      fetchMatches();
-    };
-    window.addEventListener("neural-sync", handleSync);
-    return () => window.removeEventListener("neural-sync", handleSync);
-  }, []);
+  // Helper to check if a match has one of our target topics
+  const getTopTopicMatch = (match: MatchResponse) => {
+    if (!sessionTopics.length) return null;
+    const theirSkills = match.matchedUser.skills.map(s => s.skillName.toLowerCase());
+    return sessionTopics.find((t: string) => theirSkills.includes(t.toLowerCase()));
+  };
 
   const handleSendRequest = async (match: MatchResponse) => {
     const targetUserId = match.matchedUser.id;
@@ -182,7 +184,7 @@ const MatchesPage: React.FC = () => {
             </h1>
             <p className="text-slate-400 font-bold text-sm uppercase tracking-widest flex items-center gap-2">
               <Sparkles size={14} className="text-blue-400" /> {filteredMatches.length}{" "}
-              Nodes in Current Spectrum
+              Nodes In Spectrum {sessionTopics.length > 0 && `• FOCUSING ON ${sessionTopics.join(", ")}`}
             </p>
           </div>
 
@@ -210,126 +212,142 @@ const MatchesPage: React.FC = () => {
         <div className="relative h-[680px] w-full max-w-lg mx-auto mt-4">
           <AnimatePresence>
             {currentIndex < filteredMatches.length ? (
-              filteredMatches.slice(currentIndex, currentIndex + 1).map((match) => (
-                <motion.div
-                  key={`${selectedDomain}-${match.matchedUser.id}`}
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  onDragEnd={(_, info) => {
-                    if (info.offset.x > 100) handleSwipe("right", match);
-                    else if (info.offset.x < -100) handleSwipe("left", match);
-                  }}
-                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  exit={{ 
-                    x: (currentIndex % 2 === 0 ? 500 : -500), 
-                    opacity: 0, 
-                    rotate: (currentIndex % 2 === 0 ? 45 : -45),
-                    transition: { duration: 0.4 }
-                  }}
-                  className="absolute inset-0 bg-slate-900/80 backdrop-blur-3xl border border-white/10 rounded-[4rem] p-8 md:p-10 flex flex-col shadow-2xl cursor-grab active:cursor-grabbing group overflow-hidden"
-                >
-                  {/* Trust Score Badge */}
-                  <div className="absolute top-8 left-10">
-                     <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-                        <ShieldCheck size={14} className="text-emerald-400" />
-                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
-                           {match.matchedUser.trustScore || 72}% Trust
-                        </span>
-                     </div>
-                  </div>
-
-                  {/* Sync Score Badge */}
-                  <div className="absolute top-8 right-10">
-                    <div className="bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-2xl flex items-center gap-2">
-                      <Zap size={14} className="text-blue-400 fill-blue-400" />
-                      <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
-                        {Math.round(match.score)}% Sync
-                      </span>
+              filteredMatches.slice(currentIndex, currentIndex + 1).map((match) => {
+                const topTopic = getTopTopicMatch(match);
+                return (
+                  <motion.div
+                    key={`${selectedDomain}-${match.matchedUser.id}`}
+                    drag="x"
+                    dragConstraints={{ left: 0, right: 0 }}
+                    onDragEnd={(_, info) => {
+                      if (info.offset.x > 100) handleSwipe("right", match);
+                      else if (info.offset.x < -100) handleSwipe("left", match);
+                    }}
+                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ 
+                      x: (currentIndex % 2 === 0 ? 500 : -500), 
+                      opacity: 0, 
+                      rotate: (currentIndex % 2 === 0 ? 45 : -45),
+                      transition: { duration: 0.4 }
+                    }}
+                    className="absolute inset-0 bg-slate-900/80 backdrop-blur-3xl border border-white/10 rounded-[4rem] p-8 md:p-10 flex flex-col shadow-2xl cursor-grab active:cursor-grabbing group overflow-hidden"
+                  >
+                    {/* Status Badges Area */}
+                    <div className="absolute top-8 left-10 flex flex-col gap-2">
+                       <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                          <ShieldCheck size={14} className="text-emerald-400" />
+                          <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+                             {match.matchedUser.trustScore || 72}% Trust
+                          </span>
+                       </div>
+                       
+                       {topTopic && (
+                          <motion.div 
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-500/40 rounded-2xl shadow-lg shadow-blue-500/20"
+                          >
+                             <Target size={14} className="text-blue-400" />
+                             <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
+                                Target Match: {topTopic}
+                             </span>
+                          </motion.div>
+                       )}
                     </div>
-                  </div>
 
-                  {/* Node Profile */}
-                  <div className="flex flex-col items-center mt-12 mb-8 text-center">
-                    <div className="relative mb-6">
-                       <img
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${match.matchedUser.name}`}
-                        className="w-32 h-32 rounded-[3.5rem] bg-slate-800 border-2 border-white/10 shadow-emerald-500/5 group-active:scale-95 transition-transform"
-                        alt="Avatar"
-                      />
-                      <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-500 rounded-2xl flex items-center justify-center border-4 border-[#0B0F1A]">
-                        <Cpu size={18} className="text-white" />
+                    {/* Sync Score Badge */}
+                    <div className="absolute top-8 right-10">
+                      <div className="bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-2xl flex items-center gap-2">
+                        <Zap size={14} className="text-blue-400 fill-blue-400" />
+                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
+                          {Math.round(match.score)}% Sync
+                        </span>
                       </div>
                     </div>
-                    <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase mb-2">
-                      {match.matchedUser.name}
-                    </h3>
-                    <div className="flex flex-col items-center gap-2">
-                      <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-lg">
-                        {match.matchedUser.goal?.replace(/_/g, " ")}
-                      </span>
-                      {match.matchedUser.goal === "STUDY_BUDDY" && match.matchedUser.studyMode && (
-                        <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
-                          Mode: {match.matchedUser.studyMode.replace(/_/g, " ")}
+
+                    {/* Node Profile */}
+                    <div className="flex flex-col items-center mt-12 mb-8 text-center">
+                      <div className="relative mb-6">
+                         <img
+                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${match.matchedUser.name}`}
+                          className="w-32 h-32 rounded-[3.5rem] bg-slate-800 border-2 border-white/10 shadow-emerald-500/5 group-active:scale-95 transition-transform"
+                          alt="Avatar"
+                        />
+                        <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-500 rounded-2xl flex items-center justify-center border-4 border-[#0B0F1A]">
+                          <Cpu size={18} className="text-white" />
+                        </div>
+                      </div>
+                      <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase mb-2">
+                        {match.matchedUser.name}
+                      </h3>
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-lg">
+                          {match.matchedUser.goal?.replace(/_/g, " ")}
                         </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Bio Area */}
-                  <div className="bg-white/5 rounded-[2.5rem] p-6 mb-6 border border-white/5 flex-1 flex flex-col justify-center relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-500/5 to-transparent opacity-30" />
-                    <p className="text-slate-200 text-sm font-bold leading-relaxed text-center italic relative z-10 px-4">
-                      "
-                      {match.matchedUser.bio || "Searching for neural collaboration and high-throughput skill synchronization."}
-                      "
-                    </p>
-                  </div>
-
-                  {/* Shared Specializations */}
-                  <div className="space-y-4 mb-4">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] text-center">
-                      Shared Specializations
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-2">
-                       {match.commonSkills.map((s, i) => (
-                          <span key={i} className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg text-[9px] font-bold text-blue-400 uppercase">
-                             {s}
+                        {match.matchedUser.goal === "STUDY_BUDDY" && match.matchedUser.studyMode && (
+                          <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
+                            Mode: {match.matchedUser.studyMode.replace(/_/g, " ")}
                           </span>
-                       ))}
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Team Requirements / Selective Matching */}
-                  {match.projectSkills && match.projectSkills.length > 0 && (
-                    <div className="mt-auto p-5 bg-blue-500/5 border border-blue-500/10 rounded-[2.5rem]">
-                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 text-center">
-                        Apply for Specific Role
+                    {/* Bio Area */}
+                    <div className="bg-white/5 rounded-[2.5rem] p-6 mb-6 border border-white/5 flex-1 flex flex-col justify-center relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-500/5 to-transparent opacity-30" />
+                      <p className="text-slate-200 text-sm font-bold leading-relaxed text-center italic relative z-10 px-4">
+                        "
+                        {match.matchedUser.bio || "Searching for neural collaboration and high-throughput skill synchronization."}
+                        "
+                      </p>
+                    </div>
+
+                    {/* Shared Specializations */}
+                    <div className="space-y-4 mb-4">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] text-center">
+                        Shared Specializations
                       </p>
                       <div className="flex flex-wrap justify-center gap-2">
-                        {match.projectSkills.map((skill) => (
-                          <button
-                            key={skill}
-                            onClick={(e) => { e.stopPropagation(); setSelectedSkill(skill); }}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${
-                              selectedSkill === skill
-                                ? "bg-blue-600 text-white shadow-lg shadow-blue-500/40"
-                                : "bg-slate-800 text-slate-400 hover:bg-slate-700"
-                            }`}
-                          >
-                            {skill}
-                          </button>
-                        ))}
+                         {match.commonSkills.map((s, i) => (
+                            <span key={i} className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg text-[9px] font-bold text-blue-400 uppercase">
+                               {s}
+                            </span>
+                         ))}
                       </div>
-                      {selectedSkill && (
-                        <p className="text-[9px] text-emerald-400 font-black text-center mt-4 animate-pulse uppercase tracking-widest">
-                          Right swipe to fulfill {selectedSkill} role
-                        </p>
-                      )}
                     </div>
-                  )}
-                </motion.div>
-              ))
+
+                    {/* Team Requirements / Selective Matching */}
+                    {match.projectSkills && match.projectSkills.length > 0 && (
+                      <div className="mt-auto p-5 bg-blue-500/5 border border-blue-500/10 rounded-[2.5rem]">
+                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 text-center">
+                          Apply for Specific Role
+                        </p>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {match.projectSkills.map((skill) => (
+                            <button
+                              key={skill}
+                              onClick={(e) => { e.stopPropagation(); setSelectedSkill(skill); }}
+                              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${
+                                selectedSkill === skill
+                                  ? "bg-blue-600 text-white shadow-lg shadow-blue-500/40"
+                                  : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                              }`}
+                            >
+                              {skill}
+                            </button>
+                          ))}
+                        </div>
+                        {selectedSkill && (
+                          <p className="text-[9px] text-emerald-400 font-black text-center mt-4 animate-pulse uppercase tracking-widest">
+                            Right swipe to fulfill {selectedSkill} role
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })
             ) : (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
