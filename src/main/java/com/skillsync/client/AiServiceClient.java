@@ -18,7 +18,7 @@ public class AiServiceClient {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     
-    @Value("${python.backend.url:http://localhost:8000}")
+    @Value("${python.backend.url:https://abhishek18-dev-saarthi.hf.space}")
     private String baseUrl;
 
     public AiServiceClient() {
