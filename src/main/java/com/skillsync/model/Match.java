@@ -24,6 +24,12 @@ public class Match {
     @Column(nullable = false)
     private Double score;   // 0.0 to 100.0 match percentage
 
+    @Column
+    private Long projectId;
+
+    @Column
+    private String fulfilledSkill;
+
     @Enumerated(EnumType.STRING)
     private MatchStatus status = MatchStatus.PENDING;
 
@@ -32,12 +38,14 @@ public class Match {
 
     public Match() {}
 
-    public Match(Long id, User user1, User user2, Double score, MatchStatus status) {
+    public Match(Long id, User user1, User user2, Double score, MatchStatus status, Long projectId, String fulfilledSkill) {
         this.id = id;
         this.user1 = user1;
         this.user2 = user2;
         this.score = score;
         this.status = status;
+        this.projectId = projectId;
+        this.fulfilledSkill = fulfilledSkill;
     }
 
     public enum MatchStatus {
@@ -55,6 +63,10 @@ public class Match {
     public void setScore(Double score) { this.score = score; }
     public MatchStatus getStatus() { return status; }
     public void setStatus(MatchStatus status) { this.status = status; }
+    public Long getProjectId() { return projectId; }
+    public void setProjectId(Long projectId) { this.projectId = projectId; }
+    public String getFulfilledSkill() { return fulfilledSkill; }
+    public void setFulfilledSkill(String fulfilledSkill) { this.fulfilledSkill = fulfilledSkill; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     // Builder
@@ -68,15 +80,19 @@ public class Match {
         private User user2;
         private Double score;
         private MatchStatus status = MatchStatus.PENDING;
+        private Long projectId;
+        private String fulfilledSkill;
 
         public MatchBuilder id(Long id) { this.id = id; return this; }
         public MatchBuilder user1(User user1) { this.user1 = user1; return this; }
         public MatchBuilder user2(User user2) { this.user2 = user2; return this; }
         public MatchBuilder score(Double score) { this.score = score; return this; }
         public MatchBuilder status(MatchStatus status) { this.status = status; return this; }
+        public MatchBuilder projectId(Long projectId) { this.projectId = projectId; return this; }
+        public MatchBuilder fulfilledSkill(String fulfilledSkill) { this.fulfilledSkill = fulfilledSkill; return this; }
 
         public Match build() {
-            return new Match(id, user1, user2, score, status);
+            return new Match(id, user1, user2, score, status, projectId, fulfilledSkill);
         }
     }
 }

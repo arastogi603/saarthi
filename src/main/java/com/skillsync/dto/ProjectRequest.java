@@ -12,16 +12,19 @@ public class ProjectRequest {
 
     private List<String> requiredSkills;
 
+    private Integer maxMembers;
+
     // Optional: OPEN / IN_PROGRESS / CLOSED
     private String status;
 
     public ProjectRequest() {}
 
-    public ProjectRequest(String title, String description, List<String> requiredSkills, String status) {
+    public ProjectRequest(String title, String description, List<String> requiredSkills, String status, Integer maxMembers) {
         this.title = title;
         this.description = description;
         this.requiredSkills = requiredSkills;
         this.status = status;
+        this.maxMembers = maxMembers;
     }
 
     public String getTitle() { return title; }
@@ -32,4 +35,6 @@ public class ProjectRequest {
     public void setRequiredSkills(List<String> requiredSkills) { this.requiredSkills = requiredSkills; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public Integer getMaxMembers() { return maxMembers; }
+    public void setMaxMembers(Integer maxMembers) { this.maxMembers = maxMembers; }
 }

@@ -26,6 +26,16 @@ public class Project {
     @CollectionTable(name = "project_required_skills", joinColumns = @JoinColumn(name = "project_id"))
     @Column(name = "skill")
     private List<String> requiredSkills = new ArrayList<>();
+    
+    @Column(nullable = false, columnDefinition = "integer default 1")
+    private Integer maxMembers = 1;
+    
+    @Column(nullable = false, columnDefinition = "integer default 1")
+    private Integer membersCount = 1;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "chat_room_id")
+    private ChatRoom chatRoom;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "posted_by", nullable = false)
@@ -40,7 +50,7 @@ public class Project {
 
     public Project() {}
 
-    public Project(Long id, String title, String description, List<String> requiredSkills, User postedBy, ProjectStatus status, LocalDateTime createdAt) {
+    public Project(Long id, String title, String description, List<String> requiredSkills, User postedBy, ProjectStatus status, LocalDateTime createdAt, Integer maxMembers, Integer membersCount, ChatRoom chatRoom) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -48,6 +58,9 @@ public class Project {
         this.postedBy = postedBy;
         this.status = status != null ? status : ProjectStatus.OPEN;
         this.createdAt = createdAt;
+        this.maxMembers = maxMembers != null ? maxMembers : 1;
+        this.membersCount = membersCount != null ? membersCount : 1;
+        this.chatRoom = chatRoom;
     }
 
     public static ProjectBuilder builder() {
@@ -68,6 +81,12 @@ public class Project {
     public void setStatus(ProjectStatus status) { this.status = status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Integer getMaxMembers() { return maxMembers; }
+    public void setMaxMembers(Integer maxMembers) { this.maxMembers = maxMembers; }
+    public Integer getMembersCount() { return membersCount; }
+    public void setMembersCount(Integer membersCount) { this.membersCount = membersCount; }
+    public ChatRoom getChatRoom() { return chatRoom; }
+    public void setChatRoom(ChatRoom chatRoom) { this.chatRoom = chatRoom; }
 
     public enum ProjectStatus {
         OPEN, IN_PROGRESS, CLOSED
@@ -81,6 +100,9 @@ public class Project {
         private User postedBy;
         private ProjectStatus status = ProjectStatus.OPEN;
         private LocalDateTime createdAt;
+        private Integer maxMembers = 1;
+        private Integer membersCount = 1;
+        private ChatRoom chatRoom;
 
         public ProjectBuilder id(Long id) { this.id = id; return this; }
         public ProjectBuilder title(String title) { this.title = title; return this; }
@@ -89,8 +111,11 @@ public class Project {
         public ProjectBuilder postedBy(User postedBy) { this.postedBy = postedBy; return this; }
         public ProjectBuilder status(ProjectStatus status) { this.status = status; return this; }
         public ProjectBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
+        public ProjectBuilder maxMembers(Integer maxMembers) { this.maxMembers = maxMembers; return this; }
+        public ProjectBuilder membersCount(Integer membersCount) { this.membersCount = membersCount; return this; }
+        public ProjectBuilder chatRoom(ChatRoom chatRoom) { this.chatRoom = chatRoom; return this; }
         public Project build() {
-            return new Project(id, title, description, requiredSkills, postedBy, status, createdAt);
+            return new Project(id, title, description, requiredSkills, postedBy, status, createdAt, maxMembers, membersCount, chatRoom);
         }
     }
 }

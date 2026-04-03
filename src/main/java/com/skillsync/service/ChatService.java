@@ -37,6 +37,19 @@ public class ChatService {
     }
 
     @Transactional
+    public void addMemberToRoom(Long roomId, Long userId) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        if (!room.getMembers().contains(user)) {
+            room.getMembers().add(user);
+            chatRoomRepository.save(room);
+        }
+    }
+
+    @Transactional
     public ChatRoom getOrCreatePrivateRoom(String email1, Long userId2) {
         User u1 = userRepository.findByEmail(email1).orElseThrow();
         Long userId1 = u1.getId();

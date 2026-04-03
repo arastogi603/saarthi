@@ -37,6 +37,8 @@ interface MatchResponse {
   matchedUser: MatchUser;
   commonSkills: string[];
   senderId?: number;
+  projectId?: number;
+  projectSkills?: string[];
 }
 
 const DOMAINS = [
@@ -53,6 +55,7 @@ const MatchesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDomain, setSelectedDomain] = useState("ALL");
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
   const currentUserId = Number(localStorage.getItem("userId"));
 
   const fetchMatches = async () => {
@@ -106,7 +109,12 @@ const MatchesPage: React.FC = () => {
   const handleSendRequest = async (match: MatchResponse) => {
     const targetUserId = match.matchedUser.id;
     try {
-      await api.post(`/api/matches/${targetUserId}/request`);
+      await api.post(`/api/matches/${targetUserId}/request`, null, {
+        params: {
+          projectId: match.projectId,
+          fulfilledSkill: selectedSkill
+        }
+      });
     } catch (err: any) {
       console.error("Request Error:", err);
     }
@@ -114,7 +122,11 @@ const MatchesPage: React.FC = () => {
 
   const handleAcceptRequest = async (matchId: number) => {
     try {
-      await api.put(`/api/matches/${matchId}/accept`);
+      await api.put(`/api/matches/${matchId}/accept`, null, {
+        params: {
+          fulfilledSkill: selectedSkill
+        }
+      });
     } catch (err: any) {
       console.error("Accept Error:", err);
     }
@@ -128,6 +140,7 @@ const MatchesPage: React.FC = () => {
         await handleSendRequest(match);
       }
     }
+    setSelectedSkill(null);
     setCurrentIndex((prev) => prev + 1);
   };
 
@@ -267,26 +280,48 @@ const MatchesPage: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Skills Grid */}
-                  <div className="space-y-4 mb-8">
+                  {/* Shared Specializations */}
+                  <div className="space-y-4 mb-4">
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] text-center">
                       Shared Specializations
                     </p>
-                    <div className="flex flex-wrap justify-center gap-3">
-                      {match.commonSkills.length > 0 ? match.commonSkills.slice(0, 3).map((skill, idx) => (
-                        <span
-                          key={idx}
-                          className="px-4 py-2 bg-slate-800/80 border border-white/5 rounded-xl text-[10px] font-black text-blue-400 uppercase tracking-tighter shadow-sm"
-                        >
-                          {skill}
-                        </span>
-                      )) : (
-                        <span className="text-[10px] text-slate-600 italic">No shared nodes detected</span>
-                      )}
+                    <div className="flex flex-wrap justify-center gap-2">
+                       {match.commonSkills.map((s, i) => (
+                          <span key={i} className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg text-[9px] font-bold text-blue-400 uppercase">
+                             {s}
+                          </span>
+                       ))}
                     </div>
                   </div>
 
-
+                  {/* Team Requirements / Selective Matching */}
+                  {match.projectSkills && match.projectSkills.length > 0 && (
+                    <div className="mt-auto p-5 bg-blue-500/5 border border-blue-500/10 rounded-[2.5rem]">
+                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 text-center">
+                        Apply for Specific Role
+                      </p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {match.projectSkills.map((skill) => (
+                          <button
+                            key={skill}
+                            onClick={(e) => { e.stopPropagation(); setSelectedSkill(skill); }}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${
+                              selectedSkill === skill
+                                ? "bg-blue-600 text-white shadow-lg shadow-blue-500/40"
+                                : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                            }`}
+                          >
+                            {skill}
+                          </button>
+                        ))}
+                      </div>
+                      {selectedSkill && (
+                        <p className="text-[9px] text-emerald-400 font-black text-center mt-4 animate-pulse uppercase tracking-widest">
+                          Right swipe to fulfill {selectedSkill} role
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </motion.div>
               ))
             ) : (

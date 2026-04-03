@@ -40,6 +40,9 @@ public class User {
     @Column(nullable = false, columnDefinition = "integer default 0")
     private Integer sudokuPoints = 0;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean searchActive = true;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<UserSkill> userSkills = new ArrayList<>();
 
@@ -51,7 +54,7 @@ public class User {
 
     public User() {}
 
-    public User(Long id, String name, String email, String password, String bio, String avatarUrl, Goal goal, Double trustScore, Integer sudokuPoints, List<UserSkill> userSkills, Role role, LocalDateTime createdAt) {
+    public User(Long id, String name, String email, String password, String bio, String avatarUrl, Goal goal, Double trustScore, Integer sudokuPoints, List<UserSkill> userSkills, Role role, LocalDateTime createdAt, boolean searchActive) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -64,6 +67,7 @@ public class User {
         this.userSkills = userSkills != null ? userSkills : new ArrayList<>();
         this.role = role != null ? role : Role.USER;
         this.createdAt = createdAt;
+        this.searchActive = searchActive;
     }
 
     public static UserBuilder builder() {
@@ -95,6 +99,8 @@ public class User {
     public void setRole(Role role) { this.role = role; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public boolean isSearchActive() { return searchActive; }
+    public void setSearchActive(boolean searchActive) { this.searchActive = searchActive; }
 
     public enum Goal {
         PROJECT_PARTNER, STUDY_BUDDY, HACKATHON, DISCUSSION_GROUP, TEAM_MEMBER, PLACEMENT_PREP
@@ -117,6 +123,7 @@ public class User {
         private List<UserSkill> userSkills = new ArrayList<>();
         private Role role = Role.USER;
         private LocalDateTime createdAt;
+        private boolean searchActive = true;
 
         public UserBuilder id(Long id) { this.id = id; return this; }
         public UserBuilder name(String name) { this.name = name; return this; }
@@ -130,8 +137,9 @@ public class User {
         public UserBuilder userSkills(List<UserSkill> userSkills) { this.userSkills = userSkills; return this; }
         public UserBuilder role(Role role) { this.role = role; return this; }
         public UserBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
+        public UserBuilder searchActive(boolean searchActive) { this.searchActive = searchActive; return this; }
         public User build() {
-            return new User(id, name, email, password, bio, avatarUrl, goal, trustScore, sudokuPoints, userSkills, role, createdAt);
+            return new User(id, name, email, password, bio, avatarUrl, goal, trustScore, sudokuPoints, userSkills, role, createdAt, searchActive);
         }
     }
 }

@@ -24,6 +24,8 @@ export const SaarthiBuddyEngine: React.FC = () => {
   const [level, setLevel] = useState<string>("Mid");
   const [objective, setObjective] = useState<string>("STUDY_BUDDY");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
+  const [teamSize, setTeamSize] = useState<number>(2);
+  const [requiredTeamSkills, setRequiredTeamSkills] = useState<string[]>([]);
   const navigate = useNavigate();
 
   const [skills, setSkills] = useState([
@@ -58,6 +60,18 @@ export const SaarthiBuddyEngine: React.FC = () => {
     };
 
     await api.put("/api/users/me", profileUpdate);
+
+    // If it's a project or hackathon, create/update the project record
+    if (objective === "PROJECT_PARTNER" || objective === "HACKATHON") {
+      const projectData = {
+        title: `${objective === "HACKATHON" ? "Hackathon" : "Project"}: ${localStorage.getItem("userName")}'s Team`,
+        description: `Team formation for ${objective}. Seeking members with specific skills.`,
+        requiredSkills: requiredTeamSkills,
+        maxMembers: teamSize,
+        status: "OPEN"
+      };
+      await api.post("/api/projects", projectData);
+    }
   };
 
   const handleSaveOnly = async () => {
@@ -98,6 +112,12 @@ export const SaarthiBuddyEngine: React.FC = () => {
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills((prev) =>
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
+    );
+  };
+
+  const toggleTeamSkill = (skill: string) => {
+    setRequiredTeamSkills((prev) =>
       prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
     );
   };
@@ -214,6 +234,53 @@ export const SaarthiBuddyEngine: React.FC = () => {
                   ))}
                 </div>
               </div>
+
+              {/* 04. TEAM REQUIREMENTS (Conditional) */}
+              {(objective === "PROJECT_PARTNER" || objective === "HACKATHON") && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="space-y-6 pt-4 border-t border-white/5"
+                >
+                  <div className="space-y-4">
+                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                      <Plus size={14} className="text-blue-500" /> 04. Team Size Needed
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <input 
+                        type="range" 
+                        min="2" 
+                        max="10" 
+                        value={teamSize} 
+                        onChange={(e) => setTeamSize(parseInt(e.target.value))}
+                        className="flex-1 accent-blue-500 bg-slate-800 rounded-lg h-1.5"
+                      />
+                      <span className="text-xl font-black text-white w-8">{teamSize}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                      <Search size={14} className="text-blue-500" /> 05. Skills Required from Others
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {skills.map((s) => (
+                        <button
+                          key={`team-${s}`}
+                          onClick={() => toggleTeamSkill(s)}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${
+                            requiredTeamSkills.includes(s)
+                              ? "bg-indigo-600 border-indigo-400 text-white"
+                              : "bg-slate-800/30 border-slate-700 text-slate-500"
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </div>
 
             <div className="flex gap-4 mt-10">

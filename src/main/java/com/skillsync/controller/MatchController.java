@@ -55,9 +55,10 @@ public class MatchController {
     @PutMapping("/{id}/accept")
     public ResponseEntity<?> acceptMatch(
             @PathVariable Long id,
+            @RequestParam(required = false) String fulfilledSkill,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            return ResponseEntity.ok(matchService.updateMatchStatus(id, "ACCEPTED", userDetails.getUsername()));
+            return ResponseEntity.ok(matchService.updateMatchStatus(id, "ACCEPTED", userDetails.getUsername(), fulfilledSkill));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -81,9 +82,10 @@ public class MatchController {
     public ResponseEntity<?> updateStatus(
             @PathVariable Long id,
             @RequestParam String status,
+            @RequestParam(required = false) String fulfilledSkill,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            return ResponseEntity.ok(matchService.updateMatchStatus(id, status, userDetails.getUsername()));
+            return ResponseEntity.ok(matchService.updateMatchStatus(id, status, userDetails.getUsername(), fulfilledSkill));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -111,9 +113,11 @@ public class MatchController {
     @PostMapping("/{id}/request")
     public ResponseEntity<?> requestMatch(
             @PathVariable Long id,
+            @RequestParam(required = false) Long projectId,
+            @RequestParam(required = false) String fulfilledSkill,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            return ResponseEntity.ok(matchService.requestMatch(id, userDetails.getUsername()));
+            return ResponseEntity.ok(matchService.requestMatch(id, userDetails.getUsername(), projectId, fulfilledSkill));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

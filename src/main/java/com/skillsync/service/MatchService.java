@@ -5,10 +5,12 @@ import com.skillsync.dto.MatchResponse;
 import com.skillsync.dto.ai.AiMatchResult;
 import com.skillsync.dto.ai.AiRecommendResponse;
 import com.skillsync.dto.ai.AiUserDto;
+import com.skillsync.model.Project;
 import com.skillsync.model.Match;
 import com.skillsync.model.User;
 import com.skillsync.repository.MatchRepository;
 import com.skillsync.repository.UserRepository;
+import com.skillsync.repository.ProjectRepository;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,19 +29,22 @@ public class MatchService {
     private final AiServiceClient aiServiceClient;
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ProjectRepository projectRepository;
 
     public MatchService(MatchRepository matchRepository, 
                         UserRepository userRepository, 
                         UserService userService, 
                         AiServiceClient aiServiceClient,
                         ChatService chatService,
-                        SimpMessagingTemplate messagingTemplate) {
+                        SimpMessagingTemplate messagingTemplate,
+                        ProjectRepository projectRepository) {
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
         this.userService = userService;
         this.aiServiceClient = aiServiceClient;
         this.chatService = chatService;
         this.messagingTemplate = messagingTemplate;
+        this.projectRepository = projectRepository;
     }
 
     /**
@@ -90,7 +95,7 @@ public class MatchService {
             if (score <= 0.0 && !mySkills.isEmpty()) continue;
 
             User other = userRepository.findById(otherDto.getUserId()).orElse(null);
-            if (other == null) continue;
+            if (other == null || !other.isSearchActive()) continue;
 
             // Important: We do NOT save a Match record here anymore.
             // Search / Discover should be READ-ONLY until the user clicks "Initiate Uplink".
@@ -106,6 +111,16 @@ public class MatchService {
                     .status(status)
                     .senderId(existing.map(m -> m.getUser1().getId()).orElse(null))
                     .commonSkills(mySkills.stream().filter(s -> otherDto.getSkills().stream().anyMatch(os -> os.equalsIgnoreCase(s))).collect(Collectors.toList()))
+                    .projectId(projectRepository.findByPostedById(other.getId()).stream()
+                        .filter(p -> p.getStatus() == Project.ProjectStatus.OPEN)
+                        .findFirst()
+                        .map(Project::getId)
+                        .orElse(null))
+                    .projectSkills(projectRepository.findByPostedById(other.getId()).stream()
+                        .filter(p -> p.getStatus() == Project.ProjectStatus.OPEN)
+                        .findFirst()
+                        .map(Project::getRequiredSkills)
+                        .orElse(null))
                     .build());
         }
 
@@ -147,6 +162,8 @@ public class MatchService {
                             .commonSkills(common)
                             .createdAt(m.getCreatedAt().toString())
                             .senderId(m.getUser1().getId())
+                            .projectId(m.getProjectId())
+                            .fulfilledSkill(m.getFulfilledSkill())
                             .build();
                 })
                 .sorted(Comparator.comparingDouble(MatchResponse::getScore).reversed())
@@ -154,9 +171,13 @@ public class MatchService {
     }
 
     @Transactional
-    public MatchResponse updateMatchStatus(Long matchId, String status, String email) {
+    public MatchResponse updateMatchStatus(Long matchId, String status, String email, String fulfilledSkill) {
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new RuntimeException("Match not found"));
+
+        if (fulfilledSkill != null) {
+            match.setFulfilledSkill(fulfilledSkill);
+        }
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -173,35 +194,70 @@ public class MatchService {
             throw new RuntimeException("Invalid match status: " + status + ". Use ACCEPTED or REJECTED.");
         }
         
-        match = matchRepository.save(match);
-        User other = match.getUser1().getId().equals(user.getId()) ? match.getUser2() : match.getUser1();
+        final Match savedMatch = matchRepository.save(match);
+        User other = savedMatch.getUser1().getId().equals(user.getId()) ? savedMatch.getUser2() : savedMatch.getUser1();
 
         // REAL-TIME HANDSHAKE ACTIVATION
-        if (match.getStatus() == Match.MatchStatus.ACCEPTED) {
-             // 1. Automatically Provision Private Cluster (Chat Room)
+        if (savedMatch.getStatus() == Match.MatchStatus.ACCEPTED) {
+             // 1. Requirement Lifecycle Logic
+             if (user.getGoal() == User.Goal.STUDY_BUDDY) {
+                 user.setSearchActive(false);
+                 userRepository.save(user);
+             }
+
+             // 2. Project/Team Formation Logic
+             if (savedMatch.getProjectId() != null) {
+                 Optional<Project> optProject = projectRepository.findById(savedMatch.getProjectId());
+                 if (optProject.isPresent()) {
+                     Project project = optProject.get();
+                     
+                     // Fulfilled Skill removal
+                     final String skill = savedMatch.getFulfilledSkill();
+                     if (skill != null) {
+                         project.getRequiredSkills().removeIf(s -> s.equalsIgnoreCase(skill));
+                     }
+                     
+                     // Join Group Chat Cluster
+                     if (project.getChatRoom() != null) {
+                         chatService.addMemberToRoom(project.getChatRoom().getId(), other.getId());
+                     }
+                     
+                     // Increment team count
+                     project.setMembersCount(project.getMembersCount() + 1);
+                     if (project.getMembersCount() >= project.getMaxMembers()) {
+                         project.setStatus(Project.ProjectStatus.CLOSED);
+                     }
+                     projectRepository.save(project);
+                 }
+             }
+
+             // 3. Automatically Provision Private Cluster (Chat Room) for 1:1 if not project
              try {
-                chatService.getOrCreatePrivateRoom(user.getEmail(), other.getId());
+                if (savedMatch.getProjectId() == null) {
+                    chatService.getOrCreatePrivateRoom(user.getEmail(), other.getId());
+                }
                 
-                // 2. Broadcast Neural Handshake Complete Signal to BOTH nodes
+                // 4. Broadcast Neural Handshake Complete Signal to BOTH nodes
                 Map<String, Object> signal = new HashMap<>();
                 signal.put("type", "HANDSHAKE_COMPLETE");
                 signal.put("peerName", user.getName());
-                signal.put("matchId", match.getId());
+                signal.put("matchId", savedMatch.getId());
                 
                 messagingTemplate.convertAndSendToUser(user.getEmail(), "/queue/notifications", signal);
                 messagingTemplate.convertAndSendToUser(other.getEmail(), "/queue/notifications", signal);
                 
-                System.out.println("Neural Handshake Broad-casted for Match ID: " + match.getId());
              } catch (Exception e) {
                 System.err.println("Failed to provision cluster/broadcast: " + e.getMessage());
              }
         }
 
         return MatchResponse.builder()
-                .matchId(match.getId())
+                .matchId(savedMatch.getId())
                 .matchedUser(userService.mapToProfileDto(other))
-                .score(match.getScore())
-                .status(match.getStatus().name())
+                .score(savedMatch.getScore())
+                .status(savedMatch.getStatus().name())
+                .projectId(savedMatch.getProjectId())
+                .fulfilledSkill(savedMatch.getFulfilledSkill())
                 .build();
     }
 
@@ -227,13 +283,15 @@ public class MatchService {
                             .commonSkills(common)
                             .createdAt(m.getCreatedAt() != null ? m.getCreatedAt().toString() : "")
                             .senderId(m.getUser1().getId())
+                            .projectId(m.getProjectId())
+                            .fulfilledSkill(m.getFulfilledSkill())
                             .build();
                 })
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public MatchResponse requestMatch(Long targetUserId, String senderEmail) {
+    public MatchResponse requestMatch(Long targetUserId, String senderEmail, Long projectId, String fulfilledSkill) {
         User sender = userRepository.findByEmail(senderEmail)
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
         User target = userRepository.findById(targetUserId)
@@ -265,6 +323,9 @@ public class MatchService {
                     .status(Match.MatchStatus.PENDING)
                     .build();
         }
+        
+        if (projectId != null) match.setProjectId(projectId);
+        if (fulfilledSkill != null) match.setFulfilledSkill(fulfilledSkill);
 
         Match saved = matchRepository.save(match);
         return mapToResponse(saved, target);
@@ -278,6 +339,8 @@ public class MatchService {
                 .status(match.getStatus().name())
                 .createdAt(match.getCreatedAt() != null ? match.getCreatedAt().toString() : "")
                 .senderId(match.getUser1().getId())
+                .projectId(match.getProjectId())
+                .fulfilledSkill(match.getFulfilledSkill())
                 .build();
     }
 }
