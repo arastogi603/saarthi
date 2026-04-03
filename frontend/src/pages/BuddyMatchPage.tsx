@@ -8,7 +8,9 @@ import {
   Layers,
   Search,
   Check,
+  Plus,
 } from "lucide-react";
+import { SkillSelector } from "../components/SkillSelector";
 
 import { useNavigate } from "react-router";
 
@@ -24,14 +26,16 @@ export const SaarthiBuddyEngine: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
   const navigate = useNavigate();
 
-  const skills = [
+  const [skills, setSkills] = useState([
     "React",
     "TypeScript",
     "Node.js",
     "AI/ML",
     "Next.js",
     "Tailwind",
-  ];
+  ]);
+
+  const [isAddingSkill, setIsAddingSkill] = useState(false);
 
   // Objective Options
   const objectives = [
@@ -80,6 +84,15 @@ export const SaarthiBuddyEngine: React.FC = () => {
       navigate("/matches", { state: { activeObjective: objective } });
     } catch (error) {
       console.error("Neural sync error:", error);
+    }
+  };
+
+  const handleAddSkill = (skillName: string) => {
+    if (!skills.includes(skillName)) {
+      setSkills(prev => [...prev, skillName]);
+    }
+    if (!selectedSkills.includes(skillName)) {
+      setSelectedSkills(prev => [...prev, skillName]);
     }
   };
 
@@ -135,6 +148,12 @@ export const SaarthiBuddyEngine: React.FC = () => {
                       {s}
                     </button>
                   ))}
+                  <button
+                    onClick={() => setIsAddingSkill(true)}
+                    className="px-4 py-2 rounded-2xl text-xs font-black border border-dashed border-blue-500/40 text-blue-400 hover:bg-blue-500/10 transition-all flex items-center gap-2"
+                  >
+                    <Plus size={14} /> ADD
+                  </button>
                 </div>
               </div>
 
@@ -228,6 +247,15 @@ export const SaarthiBuddyEngine: React.FC = () => {
           </motion.div>
         )}
 
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isAddingSkill && (
+          <SkillSelector 
+            onSelect={(skill) => handleAddSkill(skill)}
+            onClose={() => setIsAddingSkill(false)}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

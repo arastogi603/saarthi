@@ -17,7 +17,10 @@ import {
   LogOut,
   Share2,
   Check,
+  Plus,
+  Trash2,
 } from "lucide-react";
+import { SkillSelector } from "../components/SkillSelector";
 
 // --- INTERFACES ---
 interface UserProfile {
@@ -44,6 +47,7 @@ const ProfilePage: React.FC = () => {
   const [requests, setRequests] = useState<PeerRequest[]>([]);
   const [metrics, setMetrics] = useState<any>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [isAddingSkill, setIsAddingSkill] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -96,6 +100,45 @@ const ProfilePage: React.FC = () => {
   const handleEdit = () => {
     // Redirect to your Matchmaking/Skills engine to "Edit" profile
     navigate("/connect"); 
+  };
+
+  const handleAddSkill = async (skillName: string, level: string) => {
+    if (!userData) return;
+    
+    // Check if skill already exists
+    if (userData.skills.some(s => s.skillName.toLowerCase() === skillName.toLowerCase())) {
+      return;
+    }
+
+    const updatedSkills = [...userData.skills, { skillName, level }];
+    const updatedProfile = { ...userData, skills: updatedSkills };
+
+    try {
+      setUserData(updatedProfile);
+      await api.put("/api/users/me", updatedProfile);
+    } catch (err) {
+      console.error("Failed to add skill:", err);
+      // Revert on error
+      const originalProfile = await api.get("/api/users/me");
+      setUserData(originalProfile.data);
+    }
+  };
+
+  const handleRemoveSkill = async (skillName: string) => {
+    if (!userData) return;
+
+    const updatedSkills = userData.skills.filter(s => s.skillName !== skillName);
+    const updatedProfile = { ...userData, skills: updatedSkills };
+
+    try {
+      setUserData(updatedProfile);
+      await api.put("/api/users/me", updatedProfile);
+    } catch (err) {
+      console.error("Failed to remove skill:", err);
+      // Revert on error
+      const originalProfile = await api.get("/api/users/me");
+      setUserData(originalProfile.data);
+    }
   };
 
   const handleRequestAction = async (id: number, action: "authorize" | "drop", senderUserId?: number) => {
@@ -219,16 +262,34 @@ const ProfilePage: React.FC = () => {
               </p>
 
               <div className="flex flex-wrap gap-2 pt-4 justify-center md:justify-start">
-                {userData.skills.map((skill, index) => (
-                  <motion.div
-                    key={index}
-                    whileHover={{ scale: 1.05 }}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-2xl shadow-sm group hover:border-blue-500/50 transition-colors"
-                  >
-                    <span className="text-xs font-black text-white uppercase tracking-tight">{skill.skillName}</span>
-                    <span className="text-[9px] px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-md font-black uppercase border border-blue-500/20">{skill.level}</span>
-                  </motion.div>
-                ))}
+                <AnimatePresence>
+                  {userData.skills.map((skill) => (
+                    <motion.div
+                      key={skill.skillName}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      whileHover={{ scale: 1.05 }}
+                      className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-2xl shadow-sm group hover:border-blue-500/50 transition-colors"
+                    >
+                      <span className="text-xs font-black text-white uppercase tracking-tight">{skill.skillName}</span>
+                      <span className="text-[9px] px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-md font-black uppercase border border-blue-500/20">{skill.level}</span>
+                      <button 
+                        onClick={() => handleRemoveSkill(skill.skillName)}
+                        className="ml-1 p-1 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                
+                <button
+                  onClick={() => setIsAddingSkill(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600/10 border border-blue-500/20 text-blue-500 rounded-2xl font-black uppercase text-[10px] hover:bg-blue-600 hover:text-white transition-all shadow-lg"
+                >
+                  <Plus size={14} /> Add Skill
+                </button>
               </div>
             </div>
 
@@ -378,6 +439,15 @@ const ProfilePage: React.FC = () => {
           </motion.div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isAddingSkill && (
+          <SkillSelector 
+            onSelect={handleAddSkill} 
+            onClose={() => setIsAddingSkill(false)} 
+          />
+        )}
+      </AnimatePresence>
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
