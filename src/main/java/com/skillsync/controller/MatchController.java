@@ -70,7 +70,7 @@ public class MatchController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            return ResponseEntity.ok(matchService.updateMatchStatus(id, "REJECTED", userDetails.getUsername()));
+            return ResponseEntity.ok(matchService.updateMatchStatus(id, "REJECTED", userDetails.getUsername(), null));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
