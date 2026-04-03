@@ -77,35 +77,62 @@ public class MatchService {
         for (AiUserDto otherDto : allUsers) {
             if (otherDto.getUserId().equals(currentUser.getId())) continue;
 
+            // 1. Goal Alignment Check
+            boolean sameGoal = currentUser.getGoal() != null && 
+                             otherDto.getGoal() != null && 
+                             currentUser.getGoal().name().equalsIgnoreCase(otherDto.getGoal());
+            
+            // 2. Study Mode Pairing (Heavy Weighting for Study Buddy intent)
+            double modeFactor = 0.0;
+            if (currentUser.getGoal() == User.Goal.STUDY_BUDDY && sameGoal) {
+                String myMode = currentUser.getStudyMode() != null ? currentUser.getStudyMode() : "Learn";
+                String theirMode = otherDto.getStudyMode() != null ? otherDto.getStudyMode() : "Learn";
+
+                if (myMode.equalsIgnoreCase("Ask") && theirMode.equalsIgnoreCase("Teach")) modeFactor = 40.0;
+                else if (myMode.equalsIgnoreCase("Teach") && theirMode.equalsIgnoreCase("Ask")) modeFactor = 40.0;
+                else if (myMode.equalsIgnoreCase("Learn") && theirMode.equalsIgnoreCase("Teach")) modeFactor = 25.0;
+                else if (myMode.equalsIgnoreCase("Learn") && (theirMode.equalsIgnoreCase("Learn") || theirMode.equalsIgnoreCase("Ask"))) modeFactor = 10.0;
+            }
+
             double score = aiScores.getOrDefault(otherDto.getUserId(), 0.0);
             
             // Skill-based Fallback calculation
+            Set<String> theirSkills = new HashSet<>(otherDto.getSkills().stream()
+                    .map(String::toLowerCase).collect(Collectors.toList()));
+            long overlap = mySkills.stream().filter(theirSkills::contains).count();
+
             if (score <= 0.0) {
-                Set<String> theirSkills = new HashSet<>(otherDto.getSkills().stream()
-                        .map(String::toLowerCase).collect(Collectors.toList()));
-                
-                long overlap = mySkills.stream().filter(theirSkills::contains).count();
                 if (overlap > 0) {
-                    // Manual score: 30% base + 15% per matching skill, max 85%
-                    score = Math.min(30.0 + (overlap * 15.0), 85.0);
+                    // Manual score: 20% base + 15% per matching skill
+                    score = 20.0 + (overlap * 15.0);
                 }
+            } else {
+                // AI score exists, but we boost it if skills overlap significantly
+                score += (overlap * 5.0);
             }
 
-            // If still 0 score, we ignore them in discovery unless they are explicitly searched
-            if (score <= 0.0 && !mySkills.isEmpty()) continue;
+            // 3. Recency Boost - Prioritize NEW accounts and requests
+            double recencyBoost = Math.max(0.0, 20.0 - (otherDto.getJoinedDaysAgo() * 3.0)); // High boost for first few days
+            
+            // Final score aggregation
+            score += modeFactor + recencyBoost;
+            if (sameGoal) score += 15.0; // Same mission/goal weight
+
+            // Cap and Floor
+            score = Math.min(score, 99.0);
+            
+            // If they are on a different mission and no skill overlap, they shouldn't show up in discovery
+            if (!sameGoal && overlap == 0 && score < 40.0) continue;
 
             User other = userRepository.findById(otherDto.getUserId()).orElse(null);
             if (other == null || !other.isSearchActive()) continue;
 
-            // Important: We do NOT save a Match record here anymore.
-            // Search / Discover should be READ-ONLY until the user clicks "Initiate Uplink".
-            
             // We check if a match ALREADY exists to show the current Status
             Optional<Match> existing = matchRepository.findByUsers(currentUser.getId(), other.getId());
             String status = existing.map(m -> m.getStatus().name()).orElse("NONE");
 
             responses.add(MatchResponse.builder()
-                    .matchId(existing.map(Match::getId).orElse(other.getId())) // Using user ID as a temporary 'matchId' if no record exists
+                    .matchId(existing.map(Match::getId).orElse(other.getId()))
                     .matchedUser(userService.mapToProfileDto(other))
                     .score(Math.round(score * 10.0) / 10.0)
                     .status(status)
@@ -200,10 +227,7 @@ public class MatchService {
         // REAL-TIME HANDSHAKE ACTIVATION
         if (savedMatch.getStatus() == Match.MatchStatus.ACCEPTED) {
              // 1. Requirement Lifecycle Logic
-             if (user.getGoal() == User.Goal.STUDY_BUDDY) {
-                 user.setSearchActive(false);
-                 userRepository.save(user);
-             }
+             // Search remains active for further matches unless manually toggled.
 
              // 2. Project/Team Formation Logic
              if (savedMatch.getProjectId() != null) {

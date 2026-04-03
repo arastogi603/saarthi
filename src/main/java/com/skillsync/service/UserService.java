@@ -308,6 +308,7 @@ public class UserService {
                 .skills(skills)
                 .level(level)
                 .goal(user.getGoal() != null ? user.getGoal().name() : "General")
+                .studyMode(user.getStudyMode() != null ? user.getStudyMode() : "Learn")
                 .bio(user.getBio() != null ? user.getBio() : "")
                 .joinedDaysAgo(user.getCreatedAt() != null ? 
                     (int) java.time.temporal.ChronoUnit.DAYS.between(user.getCreatedAt(), java.time.LocalDateTime.now()) : 0)

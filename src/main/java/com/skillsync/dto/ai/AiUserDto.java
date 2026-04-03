@@ -9,6 +9,7 @@ public class AiUserDto {
     private List<String> skills = new ArrayList<>();
     private String level = "Beginner";
     private String goal = "General";
+    private String studyMode = "Learn";
     private String bio = "";
     private List<String> interests = new ArrayList<>();
     private AiUserActivityDto activity = new AiUserActivityDto();
@@ -17,12 +18,13 @@ public class AiUserDto {
 
     public AiUserDto() {}
 
-    public AiUserDto(Long userId, String name, List<String> skills, String level, String goal, String bio, List<String> interests, AiUserActivityDto activity, List<Double> ratings, int joinedDaysAgo) {
+    public AiUserDto(Long userId, String name, List<String> skills, String level, String goal, String studyMode, String bio, List<String> interests, AiUserActivityDto activity, List<Double> ratings, int joinedDaysAgo) {
         this.userId = userId;
         this.name = name;
         this.skills = skills;
         this.level = level;
         this.goal = goal;
+        this.studyMode = studyMode;
         this.bio = bio;
         this.interests = interests;
         this.activity = activity;
@@ -40,6 +42,7 @@ public class AiUserDto {
         private List<String> skills = new ArrayList<>();
         private String level = "Beginner";
         private String goal = "General";
+        private String studyMode = "Learn";
         private String bio = "";
         private List<String> interests = new ArrayList<>();
         private AiUserActivityDto activity = new AiUserActivityDto();
@@ -51,6 +54,7 @@ public class AiUserDto {
         public Builder skills(List<String> skills) { this.skills = skills; return this; }
         public Builder level(String level) { this.level = level; return this; }
         public Builder goal(String goal) { this.goal = goal; return this; }
+        public Builder studyMode(String studyMode) { this.studyMode = studyMode; return this; }
         public Builder bio(String bio) { this.bio = bio; return this; }
         public Builder interests(List<String> interests) { this.interests = interests; return this; }
         public Builder activity(AiUserActivityDto activity) { this.activity = activity; return this; }
@@ -58,7 +62,7 @@ public class AiUserDto {
         public Builder joinedDaysAgo(int joinedDaysAgo) { this.joinedDaysAgo = joinedDaysAgo; return this; }
 
         public AiUserDto build() {
-            return new AiUserDto(userId, name, skills, level, goal, bio, interests, activity, ratings, joinedDaysAgo);
+            return new AiUserDto(userId, name, skills, level, goal, studyMode, bio, interests, activity, ratings, joinedDaysAgo);
         }
     }
 
@@ -72,6 +76,8 @@ public class AiUserDto {
     public void setLevel(String level) { this.level = level; }
     public String getGoal() { return goal; }
     public void setGoal(String goal) { this.goal = goal; }
+    public String getStudyMode() { return studyMode; }
+    public void setStudyMode(String studyMode) { this.studyMode = studyMode; }
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
     public List<String> getInterests() { return interests; }
