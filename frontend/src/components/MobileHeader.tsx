@@ -4,14 +4,19 @@ import { useSidebar } from "../context/SidebarContext";
 import { useNavigate } from "react-router";
 
 export const MobileHeader: React.FC = () => {
-  const { toggleMobileMenu } = useSidebar();
+  const { toggleMobileMenu, setIsMobileMenuOpen } = useSidebar();
   const navigate = useNavigate();
+
+  const handleLogoClick = () => {
+    navigate("/");
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <header className="md:hidden sticky top-0 z-[50] w-full px-6 py-4 bg-[#030508]/80 backdrop-blur-xl border-b border-white/5 flex justify-between items-center shadow-2xl">
       <div 
         className="flex items-center gap-2 cursor-pointer"
-        onClick={() => navigate("/")}
+        onClick={handleLogoClick}
       >
         <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.3)]">
           <Zap size={18} className="text-white fill-white" />

@@ -40,7 +40,13 @@ export const Sidebar: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.clear();
+    setIsMobileMenuOpen(false);
     window.location.href = "/login";
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    setIsMobileMenuOpen(false);
   };
 
   const isExpanded = !isCollapsed || isHovered;
@@ -96,7 +102,7 @@ export const Sidebar: React.FC = () => {
       {/* Branding */}
       <div
         className="flex items-center gap-4 px-6 mt-10 mb-12 h-10 overflow-hidden cursor-pointer"
-        onClick={() => navigate("/")}
+        onClick={() => handleNavigation("/")}
       >
         <div className="min-w-[40px] h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
           <span className="text-white font-black text-xl italic tracking-tighter">
@@ -126,7 +132,7 @@ export const Sidebar: React.FC = () => {
               key={item.id}
               onMouseEnter={() => setHoveredTab(item.id)}
               onMouseLeave={() => setHoveredTab(null)}
-              onClick={() => navigate(`/${item.id}`)}
+              onClick={() => handleNavigation(`/${item.id}`)}
               className={`
                 relative w-full flex items-center h-12 rounded-2xl transition-all group
                 ${isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"}
@@ -183,7 +189,7 @@ export const Sidebar: React.FC = () => {
           <div className="space-y-4">
             <div className="flex flex-col gap-1 pt-2">
               <button
-                onClick={() => navigate("/me")}
+                onClick={() => handleNavigation("/me")}
                 className="flex items-center w-full px-4 h-10 rounded-xl text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group"
               >
                 <div className="relative min-w-[32px] flex justify-center items-center shrink-0">
@@ -239,7 +245,7 @@ export const Sidebar: React.FC = () => {
           </div>
         ) : (
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => handleNavigation("/login")}
             className="flex items-center w-full h-12 px-4 rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all"
           >
             <div className="min-w-[24px] flex justify-center">
