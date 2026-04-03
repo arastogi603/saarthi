@@ -8,8 +8,7 @@ public class UpdateProfileRequest {
     private String name;
     private String bio;
     private String goal;
-
-    // Full skill list to replace existing skills
+    private String studyMode;
     private List<SkillRequest> skills;
 
     public UpdateProfileRequest() {}
@@ -22,6 +21,9 @@ public class UpdateProfileRequest {
     public void setGoal(String goal) { this.goal = goal; }
     public List<SkillRequest> getSkills() { return skills; }
     public void setSkills(List<SkillRequest> skills) { this.skills = skills; }
+
+    public String getStudyMode() { return studyMode; }
+    public void setStudyMode(String studyMode) { this.studyMode = studyMode; }
 
     public static class SkillRequest {
         @NotEmpty

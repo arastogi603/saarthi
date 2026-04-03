@@ -9,12 +9,13 @@ public class UserProfileDto {
     private String bio;
     private String avatarUrl;
     private String goal;
+    private String studyMode;
     private Double trustScore;
     private List<SkillDto> skills;
 
     public UserProfileDto() {}
 
-    public UserProfileDto(Long id, String name, String email, String bio, String avatarUrl, String goal, Double trustScore, List<SkillDto> skills) {
+    public UserProfileDto(Long id, String name, String email, String bio, String avatarUrl, String goal, Double trustScore, List<SkillDto> skills, String studyMode) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -23,6 +24,7 @@ public class UserProfileDto {
         this.goal = goal;
         this.trustScore = trustScore;
         this.skills = skills;
+        this.studyMode = studyMode;
     }
 
     public static Builder builder() {
@@ -36,6 +38,7 @@ public class UserProfileDto {
         private String bio;
         private String avatarUrl;
         private String goal;
+        private String studyMode;
         private Double trustScore;
         private List<SkillDto> skills;
 
@@ -46,10 +49,10 @@ public class UserProfileDto {
         public Builder avatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; return this; }
         public Builder goal(String goal) { this.goal = goal; return this; }
         public Builder trustScore(Double trustScore) { this.trustScore = trustScore; return this; }
+        public Builder studyMode(String studyMode) { this.studyMode = studyMode; return this; }
         public Builder skills(List<SkillDto> skills) { this.skills = skills; return this; }
-
         public UserProfileDto build() {
-            return new UserProfileDto(id, name, email, bio, avatarUrl, goal, trustScore, skills);
+            return new UserProfileDto(id, name, email, bio, avatarUrl, goal, trustScore, skills, studyMode);
         }
     }
 
@@ -68,6 +71,9 @@ public class UserProfileDto {
     public void setGoal(String goal) { this.goal = goal; }
     public Double getTrustScore() { return trustScore; }
     public void setTrustScore(Double trustScore) { this.trustScore = trustScore; }
+    public String getStudyMode() { return studyMode; }
+    public void setStudyMode(String studyMode) { this.studyMode = studyMode; }
+
     public List<SkillDto> getSkills() { return skills; }
     public void setSkills(List<SkillDto> skills) { this.skills = skills; }
 

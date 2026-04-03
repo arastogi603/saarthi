@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../services/api";
 import {
-  BookOpen,
-  Target,
   Sparkles,
   Layers,
   Search,
@@ -20,9 +18,9 @@ type AppState = "idle"; // Simplify state to only idle form
 
 export const SaarthiBuddyEngine: React.FC = () => {
   const [step] = useState<AppState>("idle");
+    const [objective, setObjective] = useState<string>("STUDY_BUDDY");
+  const [studyMode, setStudyMode] = useState<string>("LEARN_TOGETHER");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [level, setLevel] = useState<string>("Mid");
-  const [objective, setObjective] = useState<string>("STUDY_BUDDY");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
   const [teamSize, setTeamSize] = useState<number>(2);
   const [requiredTeamSkills, setRequiredTeamSkills] = useState<string[]>([]);
@@ -39,24 +37,25 @@ export const SaarthiBuddyEngine: React.FC = () => {
 
   const [isAddingSkill, setIsAddingSkill] = useState(false);
 
-  // Objective Options
   const objectives = [
     { id: "STUDY_BUDDY", label: "Study Buddy", desc: "Learn together" },
     { id: "PROJECT_PARTNER", label: "Project Making", desc: "Build a product" },
     { id: "HACKATHON", label: "Hackathon Team", desc: "Compete & Win" },
   ];
 
-  const saveProfile = async () => {
-    const formattedSkills = selectedSkills.map((skill) => ({
-      skillName: skill,
-      level: level,
-    }));
+  const studyModes = [
+    { id: "TEACH", label: "I want to teach", desc: "Share your expertise" },
+    { id: "LEARN_TOGETHER", label: "Learn together", desc: "Mutual growth" },
+    { id: "ASK_QUESTIONS", label: "Want to ask questions", desc: "Get help from a mentor" },
+  ];
 
+  const saveProfile = async () => {
     const profileUpdate = {
       name: localStorage.getItem("userName") || "Developer",
-      bio: `Looking for a ${objective}`,
+      bio: `Looking for a ${objective}${objective === "STUDY_BUDDY" ? ` (${studyMode})` : ""}`,
       goal: objective,
-      skills: formattedSkills,
+      studyMode: objective === "STUDY_BUDDY" ? studyMode : null,
+      // Removed skills update - users manage skills via profile tab
     };
 
     await api.put("/api/users/me", profileUpdate);
@@ -148,62 +147,10 @@ export const SaarthiBuddyEngine: React.FC = () => {
             </div>
 
             <div className="space-y-8">
-              {/* 01. Specialization */}
+              {/* 01. MISSION PURPOSE (MOVED UP) */}
               <div className="space-y-4">
                 <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                  <BookOpen size={14} className="text-blue-500" /> 01.
-                  Specialization
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {skills.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => toggleSkill(s)}
-                      className={`px-4 py-2 rounded-2xl text-xs font-bold border transition-all ${
-                        selectedSkills.includes(s)
-                          ? "bg-blue-600 border-blue-400 text-white"
-                          : "bg-slate-800/50 border-slate-700 text-slate-400"
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setIsAddingSkill(true)}
-                    className="px-4 py-2 rounded-2xl text-xs font-black border border-dashed border-blue-500/40 text-blue-400 hover:bg-blue-500/10 transition-all flex items-center gap-2"
-                  >
-                    <Plus size={14} /> ADD
-                  </button>
-                </div>
-              </div>
-
-              {/* 02. Proficiency */}
-              <div className="space-y-4">
-                <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                  <Target size={14} className="text-blue-500" /> 02. Proficiency
-                  Level
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {["Beginner", "Mid", "Pro"].map((lv) => (
-                    <button
-                      key={lv}
-                      onClick={() => setLevel(lv)}
-                      className={`py-3 rounded-2xl border font-black text-[10px] uppercase transition-all ${
-                        level === lv
-                          ? "bg-white text-black"
-                          : "bg-slate-800/30 text-slate-500"
-                      }`}
-                    >
-                      {lv}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 03. NEW LAYER: MISSION OBJECTIVE */}
-              <div className="space-y-4">
-                <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                  <Layers size={14} className="text-blue-500" /> 03. Mission
+                  <Layers size={14} className="text-blue-500" /> 01. Mission
                   Purpose
                 </label>
                 <div className="grid grid-cols-1 gap-2">
@@ -235,16 +182,36 @@ export const SaarthiBuddyEngine: React.FC = () => {
                 </div>
               </div>
 
-              {/* 04. TEAM REQUIREMENTS (Conditional) */}
-              {(objective === "PROJECT_PARTNER" || objective === "HACKATHON") && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="space-y-6 pt-4 border-t border-white/5"
-                >
+              {/* 02. STUDY MODE / TEAM CONFIG (CONDITIONAL) */}
+              {objective === "STUDY_BUDDY" ? (
+                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                      <Sparkles size={14} className="text-blue-500" /> 02. Study Interaction Mode
+                    </label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {studyModes.map((mode) => (
+                        <button
+                          key={mode.id}
+                          onClick={() => setStudyMode(mode.id)}
+                          className={`px-6 py-3 rounded-2xl border flex items-center justify-between transition-all ${
+                            studyMode === mode.id
+                              ? "bg-indigo-600/20 border-indigo-500 text-white"
+                              : "bg-slate-800/30 border-slate-700 text-slate-500"
+                          }`}
+                        >
+                          <div className="text-left">
+                            <p className="text-[10px] font-black uppercase">{mode.label}</p>
+                            <p className="text-[9px] opacity-60 font-bold">{mode.desc}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                 </div>
+              ) : (
+                <div className="space-y-6 pt-4 border-t border-white/5 animate-in fade-in slide-in-from-bottom-2">
                   <div className="space-y-4">
                     <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                      <Plus size={14} className="text-blue-500" /> 04. Team Size Needed
+                      <Plus size={14} className="text-blue-500" /> 02. Team Size Needed
                     </label>
                     <div className="flex items-center gap-4">
                       <input 
@@ -258,29 +225,37 @@ export const SaarthiBuddyEngine: React.FC = () => {
                       <span className="text-xl font-black text-white w-8">{teamSize}</span>
                     </div>
                   </div>
-
-                  <div className="space-y-4">
-                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                      <Search size={14} className="text-blue-500" /> 05. Skills Required from Others
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {skills.map((s) => (
-                        <button
-                          key={`team-${s}`}
-                          onClick={() => toggleTeamSkill(s)}
-                          className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${
-                            requiredTeamSkills.includes(s)
-                              ? "bg-indigo-600 border-indigo-400 text-white"
-                              : "bg-slate-800/30 border-slate-700 text-slate-500"
-                          }`}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
+                </div>
               )}
+
+              {/* 03. SKILLS SECTION (REFACTORED) */}
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                  <Search size={14} className="text-blue-500" /> 
+                  {objective === "STUDY_BUDDY" ? "03. Topic Focus" : "03. Skills Required from Others"}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {skills.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => objective === "STUDY_BUDDY" ? toggleSkill(s) : toggleTeamSkill(s)}
+                      className={`px-4 py-2 rounded-2xl text-[10px] font-bold border transition-all ${
+                        (objective === "STUDY_BUDDY" ? selectedSkills.includes(s) : requiredTeamSkills.includes(s))
+                          ? "bg-blue-600 border-blue-400 text-white"
+                          : "bg-slate-800/50 border-slate-700 text-slate-400"
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setIsAddingSkill(true)}
+                    className="px-4 py-2 rounded-2xl text-[10px] font-black border border-dashed border-blue-500/40 text-blue-400 hover:bg-blue-500/10 transition-all flex items-center gap-2"
+                  >
+                    <Plus size={14} /> ADD
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-4 mt-10">

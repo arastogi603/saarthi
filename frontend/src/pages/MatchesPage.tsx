@@ -27,6 +27,7 @@ interface MatchUser {
   bio?: string;
   skills: SkillDto[];
   goal: string;
+  studyMode?: string;
   trustScore?: number;
 }
 
@@ -263,10 +264,15 @@ const MatchesPage: React.FC = () => {
                     <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase mb-2">
                       {match.matchedUser.name}
                     </h3>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-center gap-2">
                       <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-lg">
                         {match.matchedUser.goal?.replace(/_/g, " ")}
                       </span>
+                      {match.matchedUser.goal === "STUDY_BUDDY" && match.matchedUser.studyMode && (
+                        <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
+                          Mode: {match.matchedUser.studyMode.replace(/_/g, " ")}
+                        </span>
+                      )}
                     </div>
                   </div>
 

@@ -40,6 +40,9 @@ public class User {
     @Column(nullable = false, columnDefinition = "integer default 0")
     private Integer sudokuPoints = 0;
 
+    @Column(nullable = true)
+    private String studyMode;
+
     @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean searchActive = true;
 
@@ -54,7 +57,7 @@ public class User {
 
     public User() {}
 
-    public User(Long id, String name, String email, String password, String bio, String avatarUrl, Goal goal, Double trustScore, Integer sudokuPoints, List<UserSkill> userSkills, Role role, LocalDateTime createdAt, boolean searchActive) {
+    public User(Long id, String name, String email, String password, String bio, String avatarUrl, Goal goal, Double trustScore, Integer sudokuPoints, List<UserSkill> userSkills, Role role, LocalDateTime createdAt, boolean searchActive, String studyMode) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -68,7 +71,11 @@ public class User {
         this.role = role != null ? role : Role.USER;
         this.createdAt = createdAt;
         this.searchActive = searchActive;
+        this.studyMode = studyMode;
     }
+
+    public String getStudyMode() { return studyMode; }
+    public void setStudyMode(String studyMode) { this.studyMode = studyMode; }
 
     public static UserBuilder builder() {
         return new UserBuilder();
@@ -122,6 +129,7 @@ public class User {
         private Integer sudokuPoints = 0;
         private List<UserSkill> userSkills = new ArrayList<>();
         private Role role = Role.USER;
+        private String studyMode;
         private LocalDateTime createdAt;
         private boolean searchActive = true;
 
@@ -138,8 +146,9 @@ public class User {
         public UserBuilder role(Role role) { this.role = role; return this; }
         public UserBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
         public UserBuilder searchActive(boolean searchActive) { this.searchActive = searchActive; return this; }
+        public UserBuilder studyMode(String studyMode) { this.studyMode = studyMode; return this; }
         public User build() {
-            return new User(id, name, email, password, bio, avatarUrl, goal, trustScore, sudokuPoints, userSkills, role, createdAt, searchActive);
+            return new User(id, name, email, password, bio, avatarUrl, goal, trustScore, sudokuPoints, userSkills, role, createdAt, searchActive, studyMode);
         }
     }
 }

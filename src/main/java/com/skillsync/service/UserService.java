@@ -136,6 +136,7 @@ public class UserService {
         if (request.getName() != null) user.setName(request.getName());
         if (request.getBio() != null) user.setBio(request.getBio());
         if (request.getGoal() != null) user.setGoal(parseGoal(request.getGoal()));
+        if (request.getStudyMode() != null) user.setStudyMode(request.getStudyMode());
 
         if (request.getSkills() != null) {
             // orphanRemoval=true on User.userSkills means Hibernate will
@@ -283,6 +284,7 @@ public class UserService {
                 .goal(user.getGoal().name())
                 .trustScore(user.getTrustScore() != null ? (double)user.getTrustScore() : 72.5)
                 .skills(skillDtos)
+                .studyMode(user.getStudyMode())
                 .build();
     }
 
