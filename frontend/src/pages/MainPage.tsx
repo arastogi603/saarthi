@@ -1,12 +1,10 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import {
   Zap,
   Target,
   MessageSquare,
-  Menu,
-  X,
   ArrowRight,
   Sparkles,
   Fingerprint,
@@ -17,7 +15,6 @@ import {
 
 export const MainPage: React.FC = () => {
   const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#030508] text-slate-200 selection:bg-cyan-500/30 overflow-x-hidden font-sans">
@@ -28,7 +25,7 @@ export const MainPage: React.FC = () => {
       </div>
 
       {/* --- FLOATING NAV ISLAND --- */}
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[50%] max-w-7xl z-50 px-6 py-4 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] flex justify-between items-center shadow-2xl transition-all">
+      <nav className="hidden md:flex fixed top-6 left-1/2 -translate-x-1/2 w-[50%] max-w-7xl z-50 px-6 py-4 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] justify-between items-center shadow-2xl transition-all">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.4)]">
             <Zap size={22} className="text-white fill-white" />
@@ -51,74 +48,25 @@ export const MainPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Mobile Toggle */}
-        <button
-          className="md:hidden text-white p-2"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          {isMenuOpen ? <X /> : <Menu />}
-        </button>
+        {/* Mobile Toggle removed - handled by global header */}
       </nav>
 
-      {/* --- SLIDE-IN MOBILE SIDEBAR --- */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMenuOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] md:hidden"
-            />
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 right-0 w-[70%] z-[60] bg-[#05070A] border-l border-white/10 p-10 flex flex-col gap-10 md:hidden"
-            >
-              <div className="flex flex-col gap-8 text-2xl font-black italic uppercase tracking-tighter pt-20">
-                <a
-                  href="#features"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="text-white"
-                >
-                  The Engine
-                </a>
-                <a
-                  href="#vision"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="text-slate-500"
-                >
-                  Vision
-                </a>
-                <button
-                  onClick={() => navigate("/login")}
-                  className="w-full py-4 bg-cyan-500 text-black rounded-2xl font-black"
-                >
-                  Login
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* SLIDE-IN MOBILE SIDEBAR removed as it is now handled globally */}
 
       {/* --- HERO SECTION: SPLIT LAYOUT --- */}
-      <section className="relative pt-44 lg:pt-52 pb-20 px-6 z-10 max-w-7xl mx-auto">
+      <section className="relative pt-32 md:pt-44 lg:pt-52 pb-20 px-6 z-10 max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left Content */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-8 text-left"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8 text-center lg:text-left flex flex-col items-center lg:items-start"
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-black uppercase tracking-[0.4em]">
               <Activity size={14} className="animate-pulse" /> 4,209 Nodes
               Online
             </div>
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-white italic leading-[0.85]">
+            <h1 className="text-5xl md:text-8xl font-black tracking-tighter text-white italic leading-[0.85]">
               STOP <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600">
                 SOLOING.
@@ -186,7 +134,7 @@ export const MainPage: React.FC = () => {
       {/* --- BENTO GRID SECTION --- */}
       <section
         id="features"
-        className="max-w-7xl mx-auto px-6 py-24 relative z-10"
+        className="max-w-7xl mx-auto px-6 py-12 md:py-24 relative z-10"
       >
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="md:col-span-2 bg-slate-900/40 border border-white/5 rounded-[3rem] p-10 space-y-6 group hover:bg-slate-900/60 transition-colors">

@@ -13,6 +13,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router";
 import { useChatContext } from "../context/ChatContext";
+import { useSidebar } from "../context/SidebarContext";
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, id: "home" },
@@ -30,6 +31,7 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const chatContext = useChatContext();
+  const { isMobileMenuOpen, setIsMobileMenuOpen } = useSidebar();
   const totalUnreadCount = chatContext?.totalUnreadCount || 0;
 
   // Check authentication status
@@ -45,25 +47,44 @@ export const Sidebar: React.FC = () => {
   const activeTab = location.pathname.split("/")[1] || "home";
 
   return (
-    <motion.aside
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      initial={false}
-      animate={{
-        width: isExpanded ? 260 : 88,
-      }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="
-        relative flex flex-col 
-        h-[90vh] my-auto ml-4
-        bg-white/70 dark:bg-gray-900/60
-        backdrop-blur-xl border border-white/20 dark:border-gray-800/50 
-        rounded-[2.5rem] shadow-2xl z-50 overflow-visible
-      "
-    >
+    <>
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.aside
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        initial={false}
+        animate={{
+          width: isExpanded ? 260 : 88,
+          x: isMobileMenuOpen ? 0 : (window.innerWidth < 768 ? -300 : 0),
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className={`
+          flex flex-col 
+          h-screen md:h-[90vh] my-0 md:my-auto ml-0 md:ml-4
+          bg-white/70 dark:bg-gray-900/60
+          backdrop-blur-xl border-r md:border border-white/20 dark:border-gray-800/50 
+          rounded-r-[2.5rem] md:rounded-[2.5rem] shadow-2xl z-[60] overflow-visible
+          fixed md:relative
+          top-0 left-0
+          ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          transition-transform duration-300 ease-in-out md:transition-none
+        `}
+      >
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-20 z-[60] flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:scale-110 transition-transform"
+        className="hidden md:flex absolute -right-3 top-20 z-[60] h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:scale-110 transition-transform"
       >
         {isCollapsed && !isHovered ? (
           <ChevronRight size={14} />
@@ -233,6 +254,7 @@ export const Sidebar: React.FC = () => {
         )}
       </div>
     </motion.aside>
+    </>
   );
 };
 

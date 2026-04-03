@@ -10,14 +10,18 @@ import { MainPage } from "./pages/MainPage";
 import { ChatPage } from "./pages/ChatPage";
 import MatchesPage from "./pages/MatchesPage";
 import { ChatProvider } from "./context/ChatContext";
+import { SidebarProvider } from "./context/SidebarContext";
+import { MobileHeader } from "./components/MobileHeader";
 
 const App: React.FC = () => {
   return (
     <Router>
       <ChatProvider>
-      <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-950 items-center overflow-hidden">
-        <Sidebar />
-        <main className="flex-1 h-full overflow-y-auto pl-6">
+        <SidebarProvider>
+          <div className="flex flex-col md:flex-row h-screen w-full bg-gray-50 dark:bg-gray-950 items-center overflow-hidden">
+            <MobileHeader />
+            <Sidebar />
+            <main className="flex-1 w-full h-full overflow-y-auto pl-0 md:pl-6">
           <Routes>
             <Route path="/home" element={<HomePage />} />
             <Route path="/chat/:roomId?" element={<ChatPage />} />
@@ -28,8 +32,9 @@ const App: React.FC = () => {
             <Route path="/me" element={<ProfilePage />} />
             <Route path="/connect" element={<SaarthiBuddyEngine />} />
           </Routes>
-        </main>
-      </div>
+            </main>
+          </div>
+        </SidebarProvider>
       </ChatProvider>
     </Router>
   );

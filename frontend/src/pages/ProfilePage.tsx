@@ -179,7 +179,7 @@ const ProfilePage: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="lg:col-span-3 relative overflow-hidden bg-slate-900/40 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-8 md:p-12 shadow-2xl flex flex-col md:flex-row items-center gap-10"
+            className="lg:col-span-3 relative overflow-hidden bg-slate-900/40 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-6 md:p-12 shadow-2xl flex flex-col md:flex-row items-center gap-8 md:gap-10"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[100px] rounded-full -mr-20 -mt-20" />
 
@@ -201,7 +201,7 @@ const ProfilePage: React.FC = () => {
             <div className="flex-1 text-center md:text-left space-y-4">
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                  <h1 className="text-5xl font-black text-white tracking-tighter italic uppercase">
+                  <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter italic uppercase">
                     {userData.name}
                   </h1>
                   <div className="px-4 py-1.5 bg-blue-600 text-black text-[10px] font-black uppercase rounded-full tracking-widest shadow-[0_0_20px_rgba(37,99,235,0.4)]">
@@ -232,24 +232,24 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 w-full md:w-auto shrink-0">
-              <button 
-                onClick={handleEdit}
-                className="p-5 bg-white text-black rounded-3xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-blue-500 hover:text-white transition-all shadow-xl group"
-              >
-                Configuration <Settings size={18} className="group-hover:rotate-90 transition-transform" />
-              </button>
-              <button 
-                onClick={handleShare}
-                className={`p-5 rounded-3xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 transition-all ${
-                  isCopied 
-                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-500" 
-                    : "bg-slate-800/50 border-white/5 text-white hover:bg-white hover:text-black"
-                }`}
-              >
-                {isCopied ? "Synced" : "Share Hub"} 
-                {isCopied ? <Check size={18} /> : <Share2 size={18} />}
-              </button>
+            <div className="flex flex-col md:flex-col lg:flex-col xl:flex-row gap-3 w-full md:w-auto shrink-0">
+               <button 
+                 onClick={handleEdit}
+                 className="flex-1 p-5 bg-white text-black rounded-3xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 hover:bg-blue-500 hover:text-white transition-all shadow-xl group"
+               >
+                 Configuration <Settings size={18} className="group-hover:rotate-90 transition-transform" />
+               </button>
+               <button 
+                 onClick={handleShare}
+                 className={`flex-1 p-5 rounded-3xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 transition-all ${
+                   isCopied 
+                     ? "bg-emerald-500/20 border-emerald-500 text-emerald-500" 
+                     : "bg-slate-800/50 border-white/5 text-white hover:bg-white hover:text-black"
+                 }`}
+               >
+                 {isCopied ? "Synced" : "Share Hub"} 
+                 {isCopied ? <Check size={18} /> : <Share2 size={18} />}
+               </button>
             </div>
           </motion.div>
 

@@ -52,7 +52,7 @@ export const DashboardMain: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 min-h-screen bg-[#030508] text-slate-200 p-6 lg:p-10 relative overflow-hidden selection:bg-cyan-500/30">
+    <div className="flex-1 min-h-screen bg-[#030508] text-slate-200 p-4 md:p-6 lg:p-10 relative overflow-hidden selection:bg-cyan-500/30">
       {/* Neural Background Grid & Glows */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
          <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-blue-600/20 blur-[150px] rounded-full" />
@@ -61,21 +61,21 @@ export const DashboardMain: React.FC = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto space-y-10">
         {/* 1. TOP HEADER */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
                <Cpu size={24} className="text-cyan-500 animate-pulse" />
-               <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Neural Hub</h1>
+               <h1 className="text-3xl md:text-4xl font-black text-white italic tracking-tighter uppercase">Neural Hub</h1>
             </div>
             <p className="text-slate-500 font-black uppercase text-[10px] tracking-[0.3em]">{formattedDate}</p>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 md:gap-6">
              <motion.div 
                whileHover={{ scale: 1.05 }}
-               className="px-6 py-3 bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-2xl flex items-center gap-3 shadow-2xl group cursor-help"
+               className="px-6 py-3 bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-2xl flex items-center justify-between md:justify-start gap-3 shadow-2xl group cursor-help"
              >
-                <div className="flex flex-col items-end">
+                <div className="flex flex-col items-start md:items-end">
                    <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest leading-tight">Neural Points</span>
                    <span className="text-lg font-black text-white italic leading-tight">{metrics?.sudokuPoints || 0}</span>
                 </div>
@@ -83,8 +83,8 @@ export const DashboardMain: React.FC = () => {
                    <Zap size={20} className="text-cyan-400 fill-cyan-400" />
                 </div>
              </motion.div>
-
-             <div className="relative group">
+ 
+             <div className="relative group flex-1 md:flex-none">
                 <input
                   type="text"
                   placeholder="Scan Nodes..."
